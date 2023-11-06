@@ -1,7 +1,7 @@
-# peony admin
+# Coachonko_storefront
 
-Admin frontend for peony.
+Coachonko's blog frontend
 
 ## Notes
 
-- Uses an SPA architecture: every route except `/login` requires bearer authentication.
+- Uses SSR: the JWT is put in a cookie to allow successful first requests to protected routes.
