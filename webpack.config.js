@@ -4,7 +4,6 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import HtmlMinimizerPlugin from 'html-minimizer-webpack-plugin'
 import CssMinimizerPlugin from 'css-minimizer-webpack-plugin'
 
-// TODO split jodit js and css into different bundle
 export default function config () {
   return {
     entry: resolve('src/entry.js'),
@@ -67,7 +66,7 @@ export default function config () {
       static: {
         directory: 'src/static'
       },
-      port: 29100,
+      port: 29200,
       historyApiFallback: true
     }
   }

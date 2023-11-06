@@ -1,7 +1,7 @@
 {
-  "name": "peony-admin",
+  "name": "coachonko-storefront",
   "version": "1.0.0",
-  "description": "Admin panel for peony",
+  "description": "Coachonko's blog frontend",
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
@@ -13,8 +13,11 @@
   "repository": "https://github.com/Coachonko/peony_admin",
   "license": "NCSA",
   "dependencies": {
+    "@tinyhttp/app": "^2.2.1",
     "inferno": "^8.2.2",
-    "inferno-router": "^8.2.2"
+    "inferno-hydrate": "^8.2.2",
+    "inferno-router": "^8.2.2",
+    "inferno-server": "^8.2.2"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.22.10",

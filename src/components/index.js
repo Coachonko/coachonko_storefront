@@ -1,4 +1,4 @@
-import App from './App'
+import InfernoApp from './InfernoApp'
 import Routes from './Routes'
 
-export { App, Routes }
+export { InfernoApp, Routes }

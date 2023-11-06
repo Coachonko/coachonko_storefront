@@ -1,12 +1,12 @@
 import { render } from 'inferno'
 import { BrowserRouter } from 'inferno-router'
 
-import { App } from './components'
+import { InfernoApp } from './components'
 import './styles/index.less'
 
 render(
   <BrowserRouter>
-    <App />
+    <InfernoApp />
   </BrowserRouter>
   , document.getElementById('root')
 )
