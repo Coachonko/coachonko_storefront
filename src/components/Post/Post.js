@@ -1,5 +1,5 @@
 import { Component } from 'inferno'
-import { Link } from 'inferno-router'
+import { Link, Redirect } from 'inferno-router'
 
 import { config } from '../../../config'
 import { makeCancelable } from '../../utils/promises'
@@ -65,6 +65,12 @@ export default class Post extends Component {
   }
 
   render () {
+    if (this.state.peonyError) {
+      if (this.state.peonyError.code === 404) {
+        return <Redirect to='/404' />
+      }
+    }
+
     if (this.state.post) {
       let primaryTag
       if (this.state.post.tags) {
