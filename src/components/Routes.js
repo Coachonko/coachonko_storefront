@@ -32,7 +32,7 @@ export default function Routes (props) {
 
       <Route
         exact
-        path='/post/:id'
+        path='/post/:handle'
         render={(props) =>
           <Post {...props} {...this.props} />}
       />
