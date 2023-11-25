@@ -3,6 +3,7 @@ import { App as TinyhttpApp } from '@tinyhttp/app'
 import { renderToString } from 'inferno-server'
 import { StaticRouter } from 'inferno-router'
 import { App as InfernoApp } from './components'
+import { stat } from 'node:fs'
 
 const app = new TinyhttpApp()
 
@@ -12,26 +13,51 @@ app.get('/auth', (req, res) => {
   res.send('use this route for setting cookies')
 })
 
-// Serve static files
+// Serve static files during development.
+// Note: in production, configure lighttpd to serve static files instead.
 app.get('/static/*', (req, res) => {
-  res.sendFile(resolve(`dist/${req.path}`))
+  return fileResponse(req.path, res)
 })
 
-// Every other route can be handled by the inferno router
+// All static files should be in dist/static/
+app.get('/favicon.ico', (req, res) => {
+  const adjustedPath = `static${req.path}`
+  return fileResponse(adjustedPath, res)
+})
+
+// Every other route can be handled by inferno-router
 app.get('/*', (req, res) => {
-  res.send(infernoServerResponse(req.url))
+  return infernoServerResponse(req, res)
 })
 
 app.listen(29200)
 
-function infernoServerResponse ({ url }) {
+function fileResponse (path, res) {
+  const filePath = resolve(`dist${path}`)
+
+  stat(filePath, (err, stats) => {
+    if (err || !stats.isFile()) {
+      // If the file doesn't exist, respond with a 404 status
+      res.sendStatus(404)
+    } else {
+      res.sendFile(filePath)
+    }
+  })
+}
+
+function infernoServerResponse (req, res) {
+  const context = {}
   const renderedApp = renderToString(
-    <StaticRouter location={url}>
+    <StaticRouter location={req.url} context={context}>
       <InfernoApp />
     </StaticRouter>
   )
 
-  return `
+  if (context.url) {
+    return res.redirect(context.url)
+  }
+
+  return res.send(`
 <!DOCTYPE html>
 <html lang="en">
 
@@ -50,5 +76,5 @@ function infernoServerResponse ({ url }) {
   <script src="static/client.js"></script>
 </body>
 
-</html>`
+</html>`)
 }

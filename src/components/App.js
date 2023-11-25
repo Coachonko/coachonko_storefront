@@ -4,9 +4,8 @@ import { makeCancelable } from '../utils/promises'
 import { isPeonyError } from '../utils/peony'
 import { config } from '../../config'
 
-import { Nav } from './Nav'
+import { Alerts } from './shared'
 import { Routes } from '.'
-import { Footer } from './Footer'
 
 export default class App extends Component {
   constructor (props) {
@@ -77,12 +76,11 @@ export default class App extends Component {
   render () {
     return (
       <>
-        <Nav />
+        <Alerts />
         <Routes
           posts={this.state.posts}
           featured={this.state.featured}
         />
-        <Footer />
       </>
     )
   }

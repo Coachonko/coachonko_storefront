@@ -1,5 +1,7 @@
+import { Component } from 'inferno'
 import { Switch, Route } from 'inferno-router'
 
+import { Nav, Footer } from './shared'
 import { Home } from './Home'
 import { About } from './About'
 import { Contact } from './Contact'
@@ -9,36 +11,51 @@ import { NoMatch } from './NoMatch'
 export default function Routes (props) {
   return (
     <Switch>
-      <Route
+      <PublicRoute
         exact
         path='/'
-        render={(props) =>
+        renderComponent={(props) =>
           <Home {...props} {...this.props} />}
       />
 
-      <Route
+      <PublicRoute
         exact
         path='/about'
-        render={(props) =>
+        renderComponent={(props) =>
           <About {...props} {...this.props} />}
       />
 
-      <Route
+      <PublicRoute
         exact
         path='/contact'
-        render={(props) =>
+        renderComponent={(props) =>
           <Contact {...props} {...this.props} />}
       />
 
-      <Route
+      <PublicRoute
         exact
         path='/post/:handle'
-        render={(props) =>
+        renderComponent={(props) =>
           <Post {...props} {...this.props} />}
       />
 
-      <Route render={(props) => <NoMatch {...props} />} />
+      <PublicRoute renderComponent={(props) => <NoMatch {...props} />} />
 
     </Switch>
   )
+}
+
+class PublicRoute extends Component {
+  render () {
+    return (
+      <>
+        <Nav />
+        <Route
+          {...this.props}
+          render={(props) => this.props.renderComponent({ ...props })}
+        />
+        <Footer />
+      </>
+    )
+  }
 }
