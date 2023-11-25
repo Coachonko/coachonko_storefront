@@ -8,7 +8,7 @@ import { Nav } from './Nav'
 import { Routes } from '.'
 import { Footer } from './Footer'
 
-export default class InfernoApp extends Component {
+export default class App extends Component {
   constructor (props) {
     super(props)
 

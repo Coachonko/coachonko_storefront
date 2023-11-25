@@ -1,12 +1,12 @@
-import { render } from 'inferno'
+import { hydrate } from 'inferno-hydrate'
 import { BrowserRouter } from 'inferno-router'
 
-import { InfernoApp } from './components'
+import { App } from './components'
 import './styles/index.less'
 
-render(
+hydrate(
   <BrowserRouter>
-    <InfernoApp />
+    <App />
   </BrowserRouter>
   , document.getElementById('root')
 )
