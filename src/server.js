@@ -1,9 +1,9 @@
 import { resolve } from 'node:path'
 import { App as TinyhttpApp } from '@tinyhttp/app'
 import { renderToString } from 'inferno-server'
-import { StaticRouter } from 'inferno-router'
+import { StaticRouter, traverseLoaders, resolveLoaders } from 'inferno-router'
 import { App as InfernoApp } from './components'
-import { stat } from 'node:fs'
+import { stat } from 'node:fs/promises'
 
 const app = new TinyhttpApp()
 
@@ -15,40 +15,47 @@ app.get('/auth', (req, res) => {
 
 // Serve static files during development.
 // Note: in production, configure lighttpd to serve static files instead.
-app.get('/static/*', (req, res) => {
-  return fileResponse(req.path, res)
+app.get('/static/*', async (req, res) => {
+  return await fileResponse(req.path, res)
 })
 
 // All static files should be in dist/static/
-app.get('/favicon.ico', (req, res) => {
+app.get('/favicon.ico', async (req, res) => {
   const adjustedPath = `static${req.path}`
-  return fileResponse(adjustedPath, res)
+  return await fileResponse(adjustedPath, res)
 })
 
 // Every other route can be handled by inferno-router
-app.get('/*', (req, res) => {
-  return infernoServerResponse(req, res)
+app.get('/*', async (req, res) => {
+  return await infernoServerResponse(req, res)
 })
 
 app.listen(29200)
 
-function fileResponse (path, res) {
+async function fileResponse (path, res) {
   const filePath = resolve(`dist${path}`)
 
-  stat(filePath, (err, stats) => {
-    if (err || !stats.isFile()) {
-      // If the file doesn't exist, respond with a 404 status
+  try {
+    const stats = await stat(filePath)
+
+    if (!stats.isFile()) {
       res.sendStatus(404)
     } else {
       res.sendFile(filePath)
     }
-  })
+  } catch (err) {
+    // TODO handle errors correctly
+    res.sendStatus(404)
+  }
 }
 
-function infernoServerResponse (req, res) {
+async function infernoServerResponse (req, res) {
+  const loaderEntries = traverseLoaders(req.url, InfernoApp)
+  const initialData = await resolveLoaders(loaderEntries)
+
   const context = {}
   const renderedApp = renderToString(
-    <StaticRouter location={req.url} context={context}>
+    <StaticRouter location={req.url} context={context} initialData={initialData}>
       <InfernoApp />
     </StaticRouter>
   )
@@ -56,6 +63,17 @@ function infernoServerResponse (req, res) {
   if (context.url) {
     return res.redirect(context.url)
   }
+
+  // TODO verify data is loaded
+  console.log(initialData)
+  // TODO use data to set meta tags
+  let title = 'default title'
+  if (initialData) {
+    if (initialData.metadata && initialData.metadata.title) {
+      title = initialData.metadata.title
+    }
+  }
+  // TODO list of meta tags needed (Google tags that are actually useful)
 
   return res.send(`
 <!DOCTYPE html>
@@ -65,9 +83,10 @@ function infernoServerResponse (req, res) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Coachonko's blog</title>
+  <title>${title}</title>
   <meta name="description" content="Exercise physiologist and web developer">
   <link rel="stylesheet" type="text/css" href="static/bundle.css">
+  <script>window.infernoRouterInitialData = ${JSON.stringify(initialData)};</script>
 </head>
 
 <body>
