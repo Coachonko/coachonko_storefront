@@ -1,61 +1,39 @@
-import { Component } from 'inferno'
+// import { Component } from 'inferno'
 import { Switch, Route } from 'inferno-router'
 
-import { Nav, Footer } from './shared'
-import { Home } from './Home'
-import { About } from './About'
-import { Contact } from './Contact'
+// import { Nav, Footer } from './shared'
 import { Post } from './Post'
+import { Contact } from './Contact'
+import { Home } from './Home'
 import { NoMatch } from './NoMatch'
 
 export default function Routes (props) {
   return (
     <Switch>
-      <PublicRoute
+      <Route
         exact
         path='/'
-        renderComponent={(props) =>
-          <Home {...props} {...this.props} />}
+        render={(props) => <Home {...this.props} {...props} loader={Home.loadHome} />}
+        // https://github.com/infernojs/inferno/blob/30bd8f17e8ec3441f1cf1007a9cd2e69896669a0/demo/inferno-router-demo/src/App.tsx#L26
+        // component={Home} loader={Home.loadHome}
+        // Uncommeting this line causes the component to not render at all.
       />
 
-      <PublicRoute
-        exact
-        path='/about'
-        renderComponent={(props) =>
-          <About {...props} {...this.props} />}
-      />
-
-      <PublicRoute
-        exact
-        path='/contact'
-        renderComponent={(props) =>
-          <Contact {...props} {...this.props} />}
-      />
-
-      <PublicRoute
+      <Route
         exact
         path='/post/:handle'
-        renderComponent={(props) =>
-          <Post {...props} {...this.props} />}
+        render={(props) => <Post {...this.props} {...props} loader={Post.loadPost} />}
       />
 
-      <PublicRoute renderComponent={(props) => <NoMatch {...props} />} />
+      {/* TODO decide how to load pages, including contact */}
+      <Route
+        exact
+        path='/contact'
+        render={(props) => <Contact {...this.props} {...props} />}
+      />
+
+      <Route render={(props) => <NoMatch {...this.props} {...props} />} />
 
     </Switch>
   )
-}
-
-class PublicRoute extends Component {
-  render () {
-    return (
-      <>
-        <Nav />
-        <Route
-          {...this.props}
-          render={(props) => this.props.renderComponent({ ...props })}
-        />
-        <Footer />
-      </>
-    )
-  }
 }

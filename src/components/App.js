@@ -1,85 +1,46 @@
 import { Component } from 'inferno'
 
-import { makeCancelable } from '../utils/promises'
-import { isPeonyError } from '../utils/peony'
-import { config } from '../../config'
-
 import { Alerts } from './shared'
 import { Routes } from '.'
 
+// App keeps the state of the children component, children components will life the state to App.
 export default class App extends Component {
   constructor (props) {
     super(props)
 
     this.state = {
+      lastError: null,
+      peonyError: null,
       posts: null,
       featured: null,
-      tags: null
+      postTags: null
     }
+
+    this.updateAppState = this.updateAppState.bind(this)
   }
 
-  async componentDidMount () {
-    this.gettingPosts = makeCancelable(this.getPosts())
-    await this.resolveGettingPosts()
-  }
-
-  componentWillUnmount () {
-    if (this.gettingPosts) {
-      this.gettingPosts.cancel()
-    }
-  }
-
-  // TODO get 10 posts
-  async getPosts () {
-    try {
-      const response = await fetch(`${config.PEONY_STOREFRONT_API}/posts`, {
-        method: 'GET'
-      })
-      const data = await response.json()
-      return data
-    } catch (error) {
-      return error
-    }
-  }
-
-  async resolveGettingPosts () {
-    const data = await this.gettingPosts.promise
-    if (data instanceof Error) {
-      console.log(data)
-      this.setState({ lastError: data })
-    } else {
-      if (isPeonyError(data)) {
-        this.setState({ peonyError: data })
-      } else {
-        this.setState({ posts: data })
-      }
-    }
-  }
-
-  // TODO get 10 more posts, add to array
-  async getNextPosts () {
-
-  }
-
-  async resolveGettingNextPosts () {
-
-  }
-
-  async getFeaturedPosts () {
-
-  }
-
-  async resolveGettingFeaturedPosts () {
-
+  updateAppState (key, value) {
+    this.setState({ [key]: value })
   }
 
   render () {
     return (
       <>
-        <Alerts />
+        <Alerts
+          lastError={this.state.lastError}
+          peonyError={this.state.peonyError}
+        />
         <Routes
+          // Posts
           posts={this.state.posts}
+          setPosts={(newPosts) => this.updateAppState('posts', newPosts)}
           featured={this.state.featured}
+          setFeatured={(newFeatured) => this.updateAppState('featured', newFeatured)}
+          postTags={this.state.postTags}
+          setPostTags={(newPostTags) => this.updateAppState('postTags', newPostTags)}
+          // shared
+          setPeonyError={(newPeonyError) => this.updateAppState('peonyError', newPeonyError)}
+          setLastError={(newLastError) => this.updateAppState('lastError', newLastError)}
         />
       </>
     )

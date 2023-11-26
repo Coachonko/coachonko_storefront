@@ -1,9 +1,11 @@
 import { resolve } from 'node:path'
+import { stat } from 'node:fs/promises'
 import { App as TinyhttpApp } from '@tinyhttp/app'
 import { renderToString } from 'inferno-server'
 import { StaticRouter, traverseLoaders, resolveLoaders } from 'inferno-router'
+import { config } from '../config'
+
 import { App as InfernoApp } from './components'
-import { stat } from 'node:fs/promises'
 
 const app = new TinyhttpApp()
 
@@ -30,7 +32,7 @@ app.get('/*', async (req, res) => {
   return await infernoServerResponse(req, res)
 })
 
-app.listen(29200)
+app.listen(config.PORT)
 
 async function fileResponse (path, res) {
   const filePath = resolve(`dist${path}`)
@@ -50,12 +52,19 @@ async function fileResponse (path, res) {
 }
 
 async function infernoServerResponse (req, res) {
-  const loaderEntries = traverseLoaders(req.url, InfernoApp)
+  const infernoAppInstance = new InfernoApp()
+  const loaderEntries = traverseLoaders(req.url, infernoAppInstance, config.BASE_URL)
+  console.log(JSON.stringify(loaderEntries)) // TODO remove
+  // Problem: doesn't find loaders, []
   const initialData = await resolveLoaders(loaderEntries)
 
   const context = {}
   const renderedApp = renderToString(
-    <StaticRouter location={req.url} context={context} initialData={initialData}>
+    <StaticRouter
+      location={req.url}
+      context={context}
+      initialData={initialData}
+    >
       <InfernoApp />
     </StaticRouter>
   )
@@ -65,8 +74,9 @@ async function infernoServerResponse (req, res) {
   }
 
   // TODO verify data is loaded
-  console.log(initialData)
+  console.log(JSON.stringify(initialData))
   // TODO use data to set meta tags
+  // TODO set meta tags for routes without fetchable meta tag data
   let title = 'default title'
   if (initialData) {
     if (initialData.metadata && initialData.metadata.title) {

@@ -6,6 +6,13 @@ import { makeCancelable } from '../../utils/promises'
 import { isPeonyError } from '../../utils/peony'
 
 export default class Post extends Component {
+  static async loadHome ({ req }) {
+    return fetch(`${config.PEONY_STOREFRONT_API}/post/handle/${this.props.match.location.handle}`, {
+      method: 'GET',
+      signal: req?.signal
+    })
+  }
+
   constructor (props) {
     super(props)
 
