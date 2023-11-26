@@ -96,7 +96,7 @@ async function infernoServerResponse (req, res) {
   <title>${title}</title>
   <meta name="description" content="Exercise physiologist and web developer">
   <link rel="stylesheet" type="text/css" href="static/bundle.css">
-  <script>window.infernoRouterInitialData = ${JSON.stringify(initialData)};</script>
+  <script>window.___infernoRouterData = ${JSON.stringify(initialData)};</script>
 </head>
 
 <body>
