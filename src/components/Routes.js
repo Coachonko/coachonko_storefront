@@ -13,26 +13,26 @@ export default function Routes (props) {
       <Route
         exact
         path='/'
-        render={(props) => <Home {...this.props} {...props} loader={Home.loadHome} />}
+        render={(props) => <Home {...props} loader={Home.getInitialData} />}
         // https://github.com/infernojs/inferno/blob/30bd8f17e8ec3441f1cf1007a9cd2e69896669a0/demo/inferno-router-demo/src/App.tsx#L26
-        // component={Home} loader={Home.loadHome}
+        // component={Home} loader={Home.getInitialData}
         // Uncommeting this line causes the component to not render at all.
       />
 
       <Route
         exact
         path='/post/:handle'
-        render={(props) => <Post {...this.props} {...props} loader={Post.loadPost} />}
+        render={(props) => <Post {...props} loader={Post.getInitialData} />}
       />
 
       {/* TODO decide how to load pages, including contact */}
       <Route
         exact
         path='/contact'
-        render={(props) => <Contact {...this.props} {...props} />}
+        render={(props) => <Contact {...props} />}
       />
 
-      <Route render={(props) => <NoMatch {...this.props} {...props} />} />
+      <Route render={(props) => <NoMatch {...props} />} />
 
     </Switch>
   )
