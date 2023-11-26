@@ -1,3 +1,7 @@
 export default function Alerts () {
-  return null
+  return (
+    <div className='alerts'>
+      {null}
+    </div>
+  )
 }

@@ -6,10 +6,10 @@ import { isPeonyError } from '../../utils/peony'
 import { makeCancelable } from '../../utils/promises'
 
 export default class Home extends Component {
-  static async getInitialData ({ req }) {
+  static async getInitialData ({ request }) {
     return fetch(`${config.PEONY_STOREFRONT_API}/pages/handle/home`, {
       method: 'GET',
-      signal: req?.signal
+      signal: request?.signal
     })
   }
 
