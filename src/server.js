@@ -21,7 +21,8 @@ app.get('/static/*', async (req, res) => {
   return await fileResponse(req.path, res)
 })
 
-// All static files should be in dist/static/
+// Redirect requests for static files in dist/ to dist/static/
+// Note: in production, configure lighttpd to serve these static files too.
 app.get('/favicon.ico', async (req, res) => {
   const adjustedPath = `static${req.path}`
   return await fileResponse(adjustedPath, res)
@@ -54,18 +55,18 @@ async function fileResponse (path, res) {
 async function infernoServerResponse (req, res) {
   const infernoAppInstance = new InfernoApp()
   const loaderEntries = traverseLoaders(req.url, infernoAppInstance, config.BASE_URL)
-  console.log(JSON.stringify(loaderEntries)) // TODO remove
-  // Problem: doesn't find loaders, []
+  console.log(loaderEntries.length) // TODO remove
+  // Problem: doesn't find loaders
   const initialData = await resolveLoaders(loaderEntries)
 
   const context = {}
   const renderedApp = renderToString(
     <StaticRouter
-      location={req.url}
       context={context}
+      location={req.url}
       initialData={initialData}
     >
-      <InfernoApp />
+      <infernoAppInstance />
     </StaticRouter>
   )
 
@@ -83,7 +84,11 @@ async function infernoServerResponse (req, res) {
       title = initialData.metadata.title
     }
   }
+
+  const metaDescription = 'Exercise physiologist and web developer'
   // TODO list of meta tags needed (Google tags that are actually useful)
+  // OpenGraph tags
+  // Twitter tags
 
   return res.send(`
 <!DOCTYPE html>
@@ -92,10 +97,12 @@ async function infernoServerResponse (req, res) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, nofollow">
+  <!--<meta name="robots" content="noindex, nofollow"> -->
   <title>${title}</title>
-  <meta name="description" content="Exercise physiologist and web developer">
+  <meta name="description" content=${metaDescription}>
+
   <link rel="stylesheet" type="text/css" href="static/bundle.css">
+
   <script>window.___infernoRouterData = ${JSON.stringify(initialData)};</script>
 </head>
 
