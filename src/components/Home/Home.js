@@ -24,13 +24,10 @@ export default class Home extends Component {
   async componentDidMount () {
     const data = useLoaderData(this.props)
     const err = useLoaderError(this.props)
-    console.log(data, err) // TODO remove
-    if (data || err) {
-      await this.handleLoaderResult(data, err)
-    } else {
-      this.gettingPosts = makeCancelable(this.getPosts())
-      await this.resolveGettingPosts()
-    }
+    await this.handleLoaderResult(data, err)
+
+    this.gettingPosts = makeCancelable(this.getPosts())
+    await this.resolveGettingPosts()
   }
 
   componentWillUnmount () {
@@ -75,32 +72,66 @@ export default class Home extends Component {
     }
   }
 
-  // TODO get 10 more posts, add to array
+  // TODO disable button until new posts have been added
   async getNextPosts () {
-
+    const offset = this.props.posts.length + 10
+    try {
+      const response = await fetch(`${config.PEONY_STOREFRONT_API}/posts?offset=${offset}`, {
+        method: 'GET'
+      })
+      const data = await response.json()
+      return data
+    } catch (error) {
+      return error
+    }
   }
 
   async resolveGettingNextPosts () {
-
+    const data = await this.gettingNextPosts.promise
+    if (data instanceof Error) {
+      this.props.setLastError(data)
+    } else {
+      if (isPeonyError(data)) {
+        this.props.setPeonyError(data)
+      } else {
+        const newPostsArray = [...this.props.posts, ...data]
+        this.props.setPosts(newPostsArray)
+      }
+    }
   }
 
+  // TODO peony API support for filter
   async getFeaturedPosts () {
-
+    try {
+      const response = await fetch(`${config.PEONY_STOREFRONT_API}/posts?filter=featured}`, {
+        method: 'GET'
+      })
+      const data = await response.json()
+      return data
+    } catch (error) {
+      return error
+    }
   }
 
   async resolveGettingFeaturedPosts () {
-
+    const data = await this.gettingFeaturedPosts.promise
+    if (data instanceof Error) {
+      this.props.setLastError(data)
+    } else {
+      if (isPeonyError(data)) {
+        this.props.setPeonyError(data)
+      } else {
+        this.props.setFeatured(data)
+      }
+    }
   }
 
   render () {
     let posts
     if (this.props.posts) {
       posts = Object.values(this.props.posts).map((post, index) => {
-        return (
-          <Post key={index} post={post} />
-        )
-      }
-      )
+        return <Post key={index} post={post} />
+      })
     }
 
     return (
@@ -113,7 +144,7 @@ export default class Home extends Component {
         <Featured />
         */}
 
-        <div>
+        <div className='posts-list'>
           <ol>
             {posts}
           </ol>
