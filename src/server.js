@@ -53,9 +53,9 @@ async function fileResponse (path, res) {
 }
 
 async function infernoServerResponse (req, res) {
+  // Create an instance of the Routes component for traverseLoaders.
   const routesInstance = Routes()
   const loaderEntries = traverseLoaders(req.url, routesInstance, config.BASE_URL)
-  console.log(loaderEntries)
   const initialData = await resolveLoaders(loaderEntries)
 
   const context = {}

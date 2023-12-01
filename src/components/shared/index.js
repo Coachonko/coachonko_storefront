@@ -1,5 +1,4 @@
 import Alerts from './Alerts'
-import Nav from './Nav'
-import Footer from './Footer'
+import { Navigation } from './Navigation'
 
-export { Alerts, Nav, Footer }
+export { Alerts, Navigation }

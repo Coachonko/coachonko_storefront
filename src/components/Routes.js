@@ -1,38 +1,48 @@
-// import { Component } from 'inferno'
+import { Component } from 'inferno'
 import { Switch, Route } from 'inferno-router'
 
-// import { Nav, Footer } from './shared'
+import { Navigation } from './shared'
 import { Post } from './Post'
-import { Contact } from './Contact'
 import { Home } from './Home'
 import { NoMatch } from './NoMatch'
 
 export default function Routes (props) {
   return (
     <Switch>
-      <Route
+      <AppRoute
         exact
         path='/'
-        render={(props) => <Home {...props} />}
+        renderComponent={(props) =>
+          <Home {...props} {...this.props} />}
         loader={Home.getInitialData}
       />
 
-      <Route
+      <AppRoute
         exact
         path='/post/:handle'
-        render={(props) => <Post {...props} />}
+        renderComponent={(props) =>
+          <Post {...props} {...this.props} />}
         loader={Post.getInitialData}
       />
 
-      {/* TODO decide how to load pages, including contact */}
-      <Route
-        exact
-        path='/contact'
-        render={(props) => <Contact {...props} />}
+      <AppRoute renderComponent={(props) =>
+        <NoMatch {...props} {...this.props} />}
       />
-
-      <Route render={(props) => <NoMatch {...props} />} />
-
     </Switch>
   )
+}
+
+class AppRoute extends Component {
+  render () {
+    return (
+      <div className='app-route-container'>
+        <Navigation>
+          <Route
+            {...this.props}
+            render={(props) => this.props.renderComponent({ ...props })}
+          />
+        </Navigation>
+      </div>
+    )
+  }
 }
