@@ -5,7 +5,7 @@ import { renderToString } from 'inferno-server'
 import { StaticRouter, traverseLoaders, resolveLoaders } from 'inferno-router'
 import { config } from '../config'
 
-import { App as InfernoApp } from './components'
+import { Routes, App as InfernoApp } from './components'
 
 const app = new TinyhttpApp()
 
@@ -53,10 +53,9 @@ async function fileResponse (path, res) {
 }
 
 async function infernoServerResponse (req, res) {
-  const infernoAppInstance = new InfernoApp()
-  const loaderEntries = traverseLoaders(req.url, infernoAppInstance, config.BASE_URL)
-  console.log(loaderEntries.length) // TODO remove
-  // Problem: doesn't find loaders
+  const routesInstance = Routes()
+  const loaderEntries = traverseLoaders(req.url, routesInstance, config.BASE_URL)
+  console.log(loaderEntries)
   const initialData = await resolveLoaders(loaderEntries)
 
   const context = {}
@@ -66,7 +65,7 @@ async function infernoServerResponse (req, res) {
       location={req.url}
       initialData={initialData}
     >
-      <infernoAppInstance />
+      <InfernoApp />
     </StaticRouter>
   )
 
@@ -75,7 +74,6 @@ async function infernoServerResponse (req, res) {
   }
 
   // TODO verify data is loaded
-  console.log(JSON.stringify(initialData))
   // TODO use data to set meta tags
   // TODO set meta tags for routes without fetchable meta tag data
   let title = 'default title'
@@ -103,13 +101,13 @@ async function infernoServerResponse (req, res) {
 
   <link rel="stylesheet" type="text/css" href="static/bundle.css">
 
+  <script src="static/client.js" defer></script>
   <script>window.___infernoRouterData = ${JSON.stringify(initialData)};</script>
 </head>
 
 <body>
   <noscript>You need to enable JavaScript to run this app.</noscript>
   <div id="root">${renderedApp}</div>
-  <script src="static/client.js"></script>
 </body>
 
 </html>`)
