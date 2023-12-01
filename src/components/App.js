@@ -3,7 +3,8 @@ import { Component } from 'inferno'
 import { Alerts } from './shared'
 import { Routes } from '.'
 
-// App keeps the state of the children component, children components will life the state to App.
+// App keeps the state of the children component, children components will lift the state to App.
+// This is to prevent unnecessary requests to the server when users request already provided resources.
 export default class App extends Component {
   constructor (props) {
     super(props)
