@@ -1,15 +1,14 @@
 import { Component } from 'inferno'
-import { Link, useLoaderData, useLoaderError } from 'inferno-router'
+import { Link } from 'inferno-router'
 
 import { config } from '../../../config'
 import { isPeonyError } from '../../utils/peony'
 import { makeCancelable } from '../../utils/promises'
 
 export default class Home extends Component {
-  static async getInitialData ({ request }) {
+  static async getInitialData () {
     return fetch(`${config.PEONY_STOREFRONT_API}/posts/handle/home`, {
-      method: 'GET',
-      signal: request?.signal
+      method: 'GET'
     })
   }
 
@@ -23,8 +22,6 @@ export default class Home extends Component {
   }
 
   async componentDidMount () {
-    this.handleLoaderResult()
-
     this.gettingPosts = makeCancelable(this.getPosts())
     await this.resolveGettingPosts()
 
@@ -35,19 +32,6 @@ export default class Home extends Component {
   componentWillUnmount () {
     if (this.gettingPosts) {
       this.gettingPosts.cancel()
-    }
-  }
-
-  handleLoaderResult () {
-    const data = useLoaderData(this.props)
-    const err = useLoaderError(this.props)
-    if (err) {
-      this.props.setLastError(err)
-    }
-    if (isPeonyError(data)) {
-      this.props.setPeonyError(data)
-    } else {
-      this.setState({ homeData: data })
     }
   }
 
@@ -128,13 +112,7 @@ export default class Home extends Component {
   }
 
   render () {
-    let homeData = this.state.homeData
-    if (!homeData) {
-      const data = useLoaderData(this.props)
-      if (data) {
-        homeData = data
-      }
-    }
+    const homeData = this.props.initialData
 
     let posts
     if (this.props.posts) {

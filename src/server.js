@@ -2,10 +2,10 @@ import { resolve } from 'node:path'
 import { stat } from 'node:fs/promises'
 import { App as TinyhttpApp } from '@tinyhttp/app'
 import { renderToString } from 'inferno-server'
-import { StaticRouter, traverseLoaders, resolveLoaders } from 'inferno-router'
-import { config } from '../config'
+import { StaticRouter, matchPath } from 'inferno-router'
 
-import { Routes, App as InfernoApp } from './components'
+import { config } from '../config'
+import { routes, InfernoApp } from './InfernoApp'
 
 const app = new TinyhttpApp()
 
@@ -53,41 +53,46 @@ async function fileResponse (path, res) {
 }
 
 async function infernoServerResponse (req, res) {
-  // Create an instance of the Routes component for traverseLoaders.
-  const routesInstance = Routes()
-  const loaderEntries = traverseLoaders(req.url, routesInstance, config.BASE_URL)
-  const initialData = await resolveLoaders(loaderEntries)
-
-  const context = {}
-  const renderedApp = renderToString(
-    <StaticRouter
-      context={context}
-      location={req.url}
-      initialData={initialData}
-    >
-      <InfernoApp />
-    </StaticRouter>
-  )
-
-  if (context.url) {
-    return res.redirect(context.url)
-  }
-
-  // TODO use data to set meta tags
-  let title = 'default title'
-  const metaDescription = 'Exercise physiologist and web developer'
-  if (initialData && initialData[req.url] && initialData[req.url].res) {
-    const data = initialData[req.url].res
-
-    if (data.title) {
-      title = data.title
+  try {
+    let currentRoute = routes.find((route) => matchPath(req.url, route))
+    if (!currentRoute) {
+      currentRoute = {}
     }
-  }
-  // TODO list of meta tags needed (standard tags that are actually useful for SEO)
-  // OpenGraph tags
-  // Twitter tags
 
-  return res.send(`
+    let initialData = {}
+    if (currentRoute.getInitialData) {
+      initialData = await (await currentRoute.getInitialData()).json()
+    }
+
+    const context = {}
+    const renderedApp = renderToString(
+      <StaticRouter
+        context={context}
+        location={req.url}
+      >
+        <InfernoApp initialData={initialData} />
+      </StaticRouter>
+    )
+
+    if (context.url) {
+      return res.redirect(context.url)
+    }
+
+    // TODO use data to set meta tags
+    let title = 'default title'
+    const metaDescription = 'Exercise physiologist and web developer'
+    if (initialData && initialData[req.url] && initialData[req.url].res) {
+      const data = initialData[req.url].res
+
+      if (data.title) {
+        title = data.title
+      }
+    }
+    // TODO list of meta tags needed (standard tags that are actually useful for SEO)
+    // OpenGraph tags
+    // Twitter tags
+
+    return res.send(`
     <!DOCTYPE html>
     <html lang="en">
 
@@ -101,7 +106,7 @@ async function infernoServerResponse (req, res) {
       <link rel="stylesheet" type="text/css" href="static/bundle.css">
 
       <script src="static/client.js" defer></script>
-      <script>window.___infernoRouterData = ${JSON.stringify(initialData)};</script>
+      <script>window.___infernoServerData = ${JSON.stringify(initialData)};</script>
     </head>
 
     <body>
@@ -111,4 +116,7 @@ async function infernoServerResponse (req, res) {
 
     </html>
   `)
+  } catch (err) {
+    console.log(err)
+  }
 }

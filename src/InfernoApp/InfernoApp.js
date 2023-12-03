@@ -1,11 +1,11 @@
 import { Component } from 'inferno'
 
 import { Alerts } from './shared'
-import { Routes } from '.'
+import { Routes } from './Routes'
 
-// App keeps the state of the children component, children components will lift the state to App.
+// InfernoApp keeps the state of the children component, children components will lift the state to App.
 // This is to prevent unnecessary requests to the server when users request already provided resources.
-export default class App extends Component {
+export default class InfernoApp extends Component {
   constructor (props) {
     super(props)
 
@@ -32,6 +32,8 @@ export default class App extends Component {
           peonyError={this.state.peonyError}
         />
         <Routes
+          // SSR data
+          initialData={this.props.initialData}
           // Posts
           posts={this.state.posts}
           setPosts={(newPosts) => this.updateAppState('posts', newPosts)}
