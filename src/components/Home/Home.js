@@ -7,7 +7,7 @@ import { makeCancelable } from '../../utils/promises'
 
 export default class Home extends Component {
   static async getInitialData ({ request }) {
-    return fetch(`${config.PEONY_STOREFRONT_API}/pages/handle/home`, {
+    return fetch(`${config.PEONY_STOREFRONT_API}/posts/handle/home`, {
       method: 'GET',
       signal: request?.signal
     })
@@ -17,17 +17,19 @@ export default class Home extends Component {
     super(props)
 
     this.state = {
-      temp: null
+      isFetching: true,
+      homeData: null
     }
   }
 
   async componentDidMount () {
-    const data = useLoaderData(this.props)
-    const err = useLoaderError(this.props)
-    await this.handleLoaderResult(data, err)
+    this.handleLoaderResult()
 
     this.gettingPosts = makeCancelable(this.getPosts())
     await this.resolveGettingPosts()
+
+    this.getingFeaturedPosts = makeCancelable(this.getFeaturedPosts())
+    await this.resolveGettingFeaturedPosts()
   }
 
   componentWillUnmount () {
@@ -36,97 +38,104 @@ export default class Home extends Component {
     }
   }
 
-  async handleLoaderResult (data, err) {
+  handleLoaderResult () {
+    const data = useLoaderData(this.props)
+    const err = useLoaderError(this.props)
     if (err) {
       this.props.setLastError(err)
     }
     if (isPeonyError(data)) {
       this.props.setPeonyError(data)
     } else {
-      this.props.setPosts(data)
+      this.setState({ homeData: data })
     }
   }
 
   async getPosts () {
-    try {
-      const response = await fetch(`${config.PEONY_STOREFRONT_API}/posts`, {
-        method: 'GET'
-      })
-      const data = await response.json()
-      return data
-    } catch (error) {
-      return error
-    }
+    const response = await fetch(`${config.PEONY_STOREFRONT_API}/posts`, {
+      method: 'GET'
+    })
+    const data = await response.json()
+    return data
   }
 
   async resolveGettingPosts () {
-    const data = await this.gettingPosts.promise
-    if (data instanceof Error) {
-      this.props.setLastError(data)
-    } else {
+    try {
+      this.setState({ isFetching: true })
+      const data = await this.gettingPosts.promise
       if (isPeonyError(data)) {
         this.props.setPeonyError(data)
       } else {
         this.props.setPosts(data)
       }
+    } catch (error) {
+      this.props.setLastError(error)
+    } finally {
+      this.setState({ isFetching: false })
     }
   }
 
-  // TODO disable button until new posts have been added
   async getNextPosts () {
     const offset = this.props.posts.length + 10
-    try {
-      const response = await fetch(`${config.PEONY_STOREFRONT_API}/posts?offset=${offset}`, {
-        method: 'GET'
-      })
-      const data = await response.json()
-      return data
-    } catch (error) {
-      return error
-    }
+    const response = await fetch(`${config.PEONY_STOREFRONT_API}/posts?offset=${offset}`, {
+      method: 'GET'
+    })
+    const data = await response.json()
+    return data
   }
 
   async resolveGettingNextPosts () {
-    const data = await this.gettingNextPosts.promise
-    if (data instanceof Error) {
-      this.props.setLastError(data)
-    } else {
+    try {
+      this.setState({ isFetching: true })
+      const data = await this.gettingNextPosts.promise
       if (isPeonyError(data)) {
         this.props.setPeonyError(data)
       } else {
         const newPostsArray = [...this.props.posts, ...data]
         this.props.setPosts(newPostsArray)
       }
+    } catch (error) {
+      this.props.setLastError(error)
+    } finally {
+      this.setState({ isFetching: false })
     }
   }
 
-  // TODO peony API support for filter
+  // TODO create a featured tag using the admin frontend, add id to config.
+  // Less efficient method: get list of tags, find the tag with handle featured and use its id.
   async getFeaturedPosts () {
-    try {
-      const response = await fetch(`${config.PEONY_STOREFRONT_API}/posts?filter=featured}`, {
-        method: 'GET'
-      })
-      const data = await response.json()
-      return data
-    } catch (error) {
-      return error
-    }
+    const response = await fetch(`${config.PEONY_STOREFRONT_API}/posts?filter_tags=${config.FEATURED_TAG_ID}`, {
+      method: 'GET'
+    })
+    const data = await response.json()
+    return data
   }
 
   async resolveGettingFeaturedPosts () {
-    const data = await this.gettingFeaturedPosts.promise
-    if (data instanceof Error) {
-      this.props.setLastError(data)
-    } else {
+    try {
+      this.setState({ isFetching: true })
+      const data = await this.gettingFeaturedPosts.promise
       if (isPeonyError(data)) {
         this.props.setPeonyError(data)
       } else {
         this.props.setFeatured(data)
       }
+    } catch (error) {
+      this.props.setLastError(error)
+    } finally {
+      this.setState({ isFetching: false })
     }
   }
 
   render () {
+    let homeData = this.state.homeData
+    if (!homeData) {
+      const data = useLoaderData(this.props)
+      if (data) {
+        homeData = data
+      }
+    }
+
     let posts
     if (this.props.posts) {
       posts = Object.values(this.props.posts).map((post, index) => {
@@ -136,9 +145,7 @@ export default class Home extends Component {
 
     return (
       <>
-        <div>
-          <h1>Coachonko's blog</h1>
-        </div>
+        <Main homeData={homeData} />
 
         {/* left sidebar
         <Featured />
@@ -148,6 +155,7 @@ export default class Home extends Component {
           <ol>
             {posts}
           </ol>
+          {/* TODO load more automatically when scrolling to bottom */}
         </div>
 
         {/* right sidebar
@@ -180,5 +188,19 @@ function Post ({ key, post }) {
         </div>
       </Link>
     </li>
+  )
+}
+
+function Main ({ homeData }) {
+  if (!homeData) {
+    return null
+  }
+
+  return (
+    <main>
+      <h1>{homeData.title}</h1>
+      <span>{homeData.description}</span>
+      <div dangerouslySetInnerHTML={{ __html: homeData.content }} />
+    </main>
   )
 }

@@ -73,42 +73,42 @@ async function infernoServerResponse (req, res) {
     return res.redirect(context.url)
   }
 
-  // TODO verify data is loaded
   // TODO use data to set meta tags
-  // TODO set meta tags for routes without fetchable meta tag data
   let title = 'default title'
-  if (initialData) {
-    if (initialData.metadata && initialData.metadata.title) {
-      title = initialData.metadata.title
+  const metaDescription = 'Exercise physiologist and web developer'
+  if (initialData && initialData[req.url] && initialData[req.url].res) {
+    const data = initialData[req.url].res
+
+    if (data.title) {
+      title = data.title
     }
   }
-
-  const metaDescription = 'Exercise physiologist and web developer'
-  // TODO list of meta tags needed (Google tags that are actually useful)
+  // TODO list of meta tags needed (standard tags that are actually useful for SEO)
   // OpenGraph tags
   // Twitter tags
 
   return res.send(`
-<!DOCTYPE html>
-<html lang="en">
+    <!DOCTYPE html>
+    <html lang="en">
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!--<meta name="robots" content="noindex, nofollow"> -->
-  <title>${title}</title>
-  <meta name="description" content=${metaDescription}>
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <!--<meta name="robots" content="noindex, nofollow"> -->
+      <title>${title}</title>
+      <meta name="description" content=${metaDescription}>
 
-  <link rel="stylesheet" type="text/css" href="static/bundle.css">
+      <link rel="stylesheet" type="text/css" href="static/bundle.css">
 
-  <script src="static/client.js" defer></script>
-  <script>window.___infernoRouterData = ${JSON.stringify(initialData)};</script>
-</head>
+      <script src="static/client.js" defer></script>
+      <script>window.___infernoRouterData = ${JSON.stringify(initialData)};</script>
+    </head>
 
-<body>
-  <noscript>You need to enable JavaScript to run this app.</noscript>
-  <div id="root">${renderedApp}</div>
-</body>
+    <body>
+      <noscript>You need to enable JavaScript to run this app.</noscript>
+      <div id="root">${renderedApp}</div>
+    </body>
 
-</html>`)
+    </html>
+  `)
 }
