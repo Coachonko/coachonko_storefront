@@ -78,31 +78,107 @@ async function infernoServerResponse (req, res) {
       return res.redirect(context.url)
     }
 
-    // TODO use data to set meta tags
-    let title = 'default title'
-    const metaDescription = 'Exercise physiologist and web developer'
+    // Standard SEO
+    let title = "Coachonko's blog"
+    let metaDescription = 'Exercise physiologist and web developer'
+    const metaLanguage = 'en-US'
+    let metaDate = ''
+    let metaRobots = ''
+    let metaAuthor = ''
+    const relCanonical = config.BASE_URL + req.url
+
+    if (req.url === '') { // TODO only add on private routes
+      metaRobots = '<meta name="robots" content="noindex, nofollow">'
+    }
+
+    if (req.url === '') { // TODO only add on posts
+      metaAuthor = '<meta name="author" content="Jane Smith" />'
+    }
+
     if (initialData) {
-      if (initialData.title) {
-        title = initialData.title
+      metaDate = initialData.updatedAt
+
+      if (initialData.metadata) {
+        if (initialData.metadata.title) {
+          title = initialData.metadata.title
+        }
+        if (initialData.metadata.description) {
+          metaDescription = initialData.metadata.description
+        }
       }
     }
-    // TODO list of meta tags needed (standard tags that are actually useful for SEO)
-    // OpenGraph tags
-    // Twitter tags
+
+    // OpenGraph https://ogp.me/
+    const ogSiteName = "Coachonko's blog"
+    let ogTitle = title
+    let ogDescription = metaDescription
+    const ogRest = '' // TODO route-based
+
+    if (initialData.metadata) {
+      if (initialData.metadata.ogTitle) {
+        ogTitle = initialData.metadata.ogTitle
+      }
+      if (initialData.metadata.ogDescription) {
+        ogDescription = initialData.metadata.ogDescription
+      }
+      // author
+      // TODO <meta property="og:image" content="${}" />
+      // og:video
+    }
+
+    // if (req.url === '') {
+    //   ogRest = `
+    //   <meta property="og:type" content="video.movie" />
+    //   <meta property="og:locale:alternate" content="${langs}" />`
+    // }
+
+    // Twitter https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/app-card
+    const twitterSite = ''
+    let twitterTitle = title
+    let twitterDescription = metaDescription
+    const twitterRest = '' // TODO route based
+    if (initialData.metadata) {
+      if (initialData.metadata.twitterTitle) {
+        twitterTitle = initialData.metadata.twitterTitle
+      }
+      if (initialData.metadata.twitterDescription) {
+        twitterDescription = initialData.metadata.twitterDescription
+      }
+      // <meta name="twitter:image" content="https://www.example.com/image.jpg">
+      // <meta name="twitter:creator" content="${twitterCreator}"> TODO author, I imagine
+    }
 
     return res.send(`
     <!DOCTYPE html>
     <html lang="en">
 
     <head>
+      ${metaRobots}
       <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <!--<meta name="robots" content="noindex, nofollow"> -->
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
       <title>${title}</title>
-      <meta name="description" content=${metaDescription}>
+      <meta name="description" content=${metaDescription} />
+      <meta http-equiv="content-language" content="${metaLanguage}" />
+      <meta name="date" content="${metaDate}" />
+      <link rel="canonical" href="${relCanonical}" />
+      ${metaAuthor}
 
-      <link rel="stylesheet" type="text/css" href="static/bundle.css">
+      <meta property="og:site_name" content="${ogSiteName}" />
+      <meta property="og:title" content="${ogTitle}" />
+      <meta property="og:description" content="${ogDescription}" />
+      <meta property="og:url" content="${relCanonical}" />
+      <meta property="og:locale" content="${metaLanguage}" />
+      ${ogRest}
 
+      <meta name="twitter:card" content="summary">
+      <!-- <meta name="twitter:site" content="${twitterSite}"> no twitter handle for website yet -->
+      <meta name="twitter:title" content="${twitterTitle}">
+      <meta name="twitter:description" content="${twitterDescription}">
+      <meta name="twitter:url" content="${relCanonical}">
+      ${twitterRest}
+
+      <link rel="stylesheet" type="text/css" href="static/bundle.css" />
       <script src="static/client.js" defer></script>
       <script>window.___infernoServerData = ${JSON.stringify(initialData)};</script>
     </head>
