@@ -81,11 +81,9 @@ async function infernoServerResponse (req, res) {
     // TODO use data to set meta tags
     let title = 'default title'
     const metaDescription = 'Exercise physiologist and web developer'
-    if (initialData && initialData[req.url] && initialData[req.url].res) {
-      const data = initialData[req.url].res
-
-      if (data.title) {
-        title = data.title
+    if (initialData) {
+      if (initialData.title) {
+        title = initialData.title
       }
     }
     // TODO list of meta tags needed (standard tags that are actually useful for SEO)
