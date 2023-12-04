@@ -184,7 +184,7 @@ async function infernoServerResponse (req, res) {
       ${twitterRest}
 
       <link rel="stylesheet" type="text/css" href="static/bundle.css" />
-      <script src="static/browser.js" defer></script>
+      <script src="/static/browser.js" defer></script>
       <script>window.___initialData = ${JSON.stringify(initialData)};</script>
     </head>
 

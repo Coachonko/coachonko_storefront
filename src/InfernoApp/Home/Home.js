@@ -34,9 +34,24 @@ export default class Home extends Component {
   }
 
   async componentDidMount () {
+    // Check SSR data set by constructor
     if (this.state.homeData === null) {
-      this.gettingHomeData = makeCancelable(Home.getInitialData())
-      await this.resolveGettingHomeData()
+      // Check App state
+      if (this.props.pages && this.props.pages.home) {
+        this.setState({ homeData: this.props.pages.home })
+      } else {
+        this.gettingHomeData = makeCancelable(Home.getInitialData())
+        await this.resolveGettingHomeData()
+      }
+    } else {
+      if (this.props.pages === null || !this.props.pages.home) {
+        let newPages = {}
+        newPages = {
+          ...this.props.pages,
+          [this.state.homeData.handle]: this.state.homeData
+        }
+        this.props.setPages(newPages)
+      }
     }
 
     this.gettingPosts = makeCancelable(this.getPosts())
@@ -60,6 +75,12 @@ export default class Home extends Component {
       if (isPeonyError(data)) {
         this.props.setPeonyError(data)
       } else {
+        let newPages = {}
+        newPages = {
+          ...this.props.pages,
+          [data.handle]: data
+        }
+        this.props.setPages(newPages)
         this.setState({ homeData: data })
       }
     } catch (error) {

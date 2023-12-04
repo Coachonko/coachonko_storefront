@@ -13,6 +13,7 @@ export default class InfernoApp extends Component {
       lastError: null,
       peonyError: null,
       posts: null,
+      pages: null,
       featured: null,
       postTags: null
     }
@@ -41,7 +42,10 @@ export default class InfernoApp extends Component {
           setFeatured={(newFeatured) => this.updateAppState('featured', newFeatured)}
           postTags={this.state.postTags}
           setPostTags={(newPostTags) => this.updateAppState('postTags', newPostTags)}
-          // shared
+          // Pages
+          pages={this.state.pages}
+          setPages={(newPages) => this.updateAppState('pages', newPages)}
+          // errors
           setPeonyError={(newPeonyError) => this.updateAppState('peonyError', newPeonyError)}
           setLastError={(newLastError) => this.updateAppState('lastError', newLastError)}
         />
