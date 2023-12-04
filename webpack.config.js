@@ -44,13 +44,13 @@ const serverConfig = {
   }
 }
 
-const clientConfig = {
+const browserConfig = {
   ...baseConfig,
-  entry: resolve('src/client.js'),
+  entry: resolve('src/browser.js'),
   output: {
     path: resolve('./dist/static'),
     publicPath: '/',
-    filename: 'client.js'
+    filename: 'browser.js'
   },
   module: {
     ...baseConfig.module,
@@ -128,9 +128,9 @@ export default function config () {
   if (target === 'server') {
     return serverConfig
   }
-  if (target === 'client') {
-    return clientConfig
+  if (target === 'browser') {
+    return browserConfig
   }
 
-  throw new Error('WEBPACK_ENV must be either "server" or "client"')
+  throw new Error('WEBPACK_ENV must be either "server" or "browser"')
 }

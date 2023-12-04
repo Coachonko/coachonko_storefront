@@ -6,30 +6,43 @@ import { makeCancelable } from '../../utils/promises'
 import { isPeonyError } from '../../utils/peony'
 
 export default class Post extends Component {
-  static async getInitialData ({ req }) {
-    return fetch(`${config.PEONY_STOREFRONT_API}/post/handle/${this.props.match.location.handle}`, {
-      method: 'GET',
-      signal: req?.signal
+  static async getInitialData (url) {
+    const handle = url.split('/').pop()
+    return fetch(`${config.PEONY_STOREFRONT_API}/posts/handle/${handle}`, {
+      method: 'GET'
     })
   }
 
   constructor (props) {
     super(props)
 
+    let initialData
+    if (typeof window === 'undefined') {
+      initialData = this.props.staticContext.initialData
+    } else {
+      if (window.___initialData) {
+        initialData = window.___initialData
+        delete window.___initialData
+      } else {
+        initialData = null
+      }
+    }
+
     this.state = {
-      lastError: null,
-      peonyError: null,
-      post: null
+      isFetching: false,
+      postData: initialData
     }
   }
 
   async componentDidMount () {
-    if (this.props.posts) {
-      const matchedPost = this.props.posts.find(post => post.handle === this.props.match.params.handle)
-      this.setState({ post: matchedPost })
-    } else {
-      this.gettingPostData = makeCancelable(this.getPostData())
-      await this.resolveGettingPostData()
+    if (this.state.postData === null) {
+      if (this.props.posts) {
+        const matchedPost = this.props.posts.find(post => post.handle === this.props.match.params.handle)
+        this.setState({ postData: matchedPost })
+      } else {
+        this.gettingPostData = makeCancelable(Post.getInitialData(this.props.match.params.handle))
+        await this.resolveGettingPostData()
+      }
     }
   }
 
@@ -39,35 +52,20 @@ export default class Post extends Component {
     }
   }
 
-  async getPostData () {
-    try {
-      const endpoint = `${config.PEONY_STOREFRONT_API}/posts/handle/${this.props.match.params.handle}`
-      const response = await fetch(endpoint, {
-        method: 'GET'
-      })
-      const data = await response.json()
-      return data
-    } catch (error) {
-      return error
-    }
-  }
-
   async resolveGettingPostData () {
     try {
-      const data = await this.gettingPostData.promise
-      if (data instanceof Error) {
-        console.error(data)
-        this.setState({ lastError: data })
+      this.setState({ isFetching: true })
+      const response = await this.gettingPostData.promise
+      const data = await response.json()
+      if (isPeonyError(data)) {
+        this.props.setPeonyError(data)
       } else {
-        if (isPeonyError(data)) {
-          this.setState({ peonyError: data })
-        } else {
-          this.setState({ post: data })
-        }
+        this.setState({ postData: data })
       }
     } catch (error) {
-      console.error(error)
-      this.setState({ lastError: error })
+      this.props.setLastError(error)
+    } finally {
+      this.setState({ isFetching: false })
     }
   }
 
@@ -78,19 +76,19 @@ export default class Post extends Component {
       }
     }
 
-    if (this.state.post) {
+    if (this.state.postData) {
       let primaryTag
-      if (this.state.post.tags) {
-        primaryTag = this.state.post.tags[0]
+      if (this.state.postData.tags) {
+        primaryTag = this.state.postData.tags[0]
       }
 
       return (
         <>
           <LeftColumn
-            title={this.state.post.title}
+            title={this.state.postData.title}
             primaryTag={primaryTag}
           />
-          <RightColumn post={this.state.post} />
+          <RightColumn post={this.state.postData} />
           <BottomRow />
         </>
       )

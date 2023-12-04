@@ -15,13 +15,30 @@ export default class Home extends Component {
   constructor (props) {
     super(props)
 
+    let initialData
+    if (typeof window === 'undefined') {
+      initialData = this.props.staticContext.initialData
+    } else {
+      if (window.___initialData) {
+        initialData = window.___initialData
+        delete window.___initialData
+      } else {
+        initialData = null
+      }
+    }
+
     this.state = {
-      isFetching: true,
-      homeData: null
+      isFetching: false,
+      homeData: initialData
     }
   }
 
   async componentDidMount () {
+    if (this.state.homeData === null) {
+      this.gettingHomeData = makeCancelable(Home.getInitialData())
+      await this.resolveGettingHomeData()
+    }
+
     this.gettingPosts = makeCancelable(this.getPosts())
     await this.resolveGettingPosts()
 
@@ -32,6 +49,23 @@ export default class Home extends Component {
   componentWillUnmount () {
     if (this.gettingPosts) {
       this.gettingPosts.cancel()
+    }
+  }
+
+  async resolveGettingHomeData () {
+    try {
+      this.setState({ isFetching: true })
+      const response = await this.gettingHomeData.promise
+      const data = await response.json()
+      if (isPeonyError(data)) {
+        this.props.setPeonyError(data)
+      } else {
+        this.setState({ homeData: data })
+      }
+    } catch (error) {
+      this.props.setLastError(error)
+    } finally {
+      this.setState({ isFetching: false })
     }
   }
 
@@ -112,29 +146,15 @@ export default class Home extends Component {
   }
 
   render () {
-    const homeData = this.props.initialData
-
-    let posts
-    if (this.props.posts) {
-      posts = Object.values(this.props.posts).map((post, index) => {
-        return <Post key={index} post={post} />
-      })
-    }
-
     return (
       <>
-        <Main homeData={homeData} />
+        <Main homeData={this.state.homeData} />
 
         {/* left sidebar
         <Featured />
         */}
 
-        <div className='posts-list'>
-          <ol>
-            {posts}
-          </ol>
-          {/* TODO load more automatically when scrolling to bottom */}
-        </div>
+        <Posts postsData={this.props.posts} />
 
         {/* right sidebar
         <Tags />
@@ -142,6 +162,42 @@ export default class Home extends Component {
       </>
     )
   }
+}
+
+function Main ({ homeData }) {
+  if (homeData === null) {
+    return null
+  }
+
+  return (
+    <main>
+      <h1>{homeData.title}</h1>
+      <span>{homeData.subtitle}</span>
+      <div dangerouslySetInnerHTML={{ __html: homeData.content }} />
+    </main>
+  )
+}
+
+function Posts ({ postsData }) {
+  const posts = []
+  if (postsData) {
+    for (const [index, post] of Object.values(postsData).entries()) {
+      posts.push(<Post key={index} post={post} />)
+    }
+  }
+
+  if (posts.length === 0) {
+    return null
+  }
+
+  return (
+    <div className='posts-list'>
+      <ol>
+        {posts}
+      </ol>
+      {/* TODO load more automatically when scrolling to bottom */}
+    </div>
+  )
 }
 
 function Post ({ key, post }) {
@@ -166,19 +222,5 @@ function Post ({ key, post }) {
         </div>
       </Link>
     </li>
-  )
-}
-
-function Main ({ homeData }) {
-  if (!homeData) {
-    return null
-  }
-
-  return (
-    <main>
-      <h1>{homeData.title}</h1>
-      <span>{homeData.description}</span>
-      <div dangerouslySetInnerHTML={{ __html: homeData.content }} />
-    </main>
   )
 }

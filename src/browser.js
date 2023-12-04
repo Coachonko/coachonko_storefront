@@ -6,7 +6,7 @@ import './styles/index.less'
 
 hydrate(
   <BrowserRouter>
-    <InfernoApp initialData={window.___infernoServerData} />
+    <InfernoApp />
   </BrowserRouter>
   , document.getElementById('root')
 )

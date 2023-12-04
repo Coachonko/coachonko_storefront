@@ -9,9 +9,9 @@ import { routes, InfernoApp } from './InfernoApp'
 
 const app = new TinyhttpApp()
 
-// peony sends the client a JWT, but a JWT cannot be provided by the browser on its first request.
+// peony sends the browser a JWT, but a JWT cannot be provided by the browser on its first request.
 // The solution is to let the frontend server put the JWT in a cookie and give the cookie to the browser.
-app.get('/auth', (req, res) => {
+app.get('/api/auth', (req, res) => {
   res.send('use this route for setting cookies')
 })
 
@@ -61,16 +61,21 @@ async function infernoServerResponse (req, res) {
 
     let initialData = {}
     if (currentRoute.getInitialData) {
-      initialData = await (await currentRoute.getInitialData()).json()
+      const response = await currentRoute.getInitialData(req.url)
+      if (!response.ok) {
+        const err = await response.text()
+        throw new Error(err)
+      }
+      initialData = await response.json()
     }
 
-    const context = {}
+    const context = { initialData }
     const renderedApp = renderToString(
       <StaticRouter
         context={context}
         location={req.url}
       >
-        <InfernoApp initialData={initialData} />
+        <InfernoApp />
       </StaticRouter>
     )
 
@@ -145,7 +150,7 @@ async function infernoServerResponse (req, res) {
         twitterDescription = initialData.metadata.twitterDescription
       }
       // <meta name="twitter:image" content="https://www.example.com/image.jpg">
-      // <meta name="twitter:creator" content="${twitterCreator}"> TODO author, I imagine
+      // <meta name="twitter:creator" content="${twitterCreator}"> TODO author if in user.metadata.twitterCreator
     }
 
     return res.send(`
@@ -158,7 +163,7 @@ async function infernoServerResponse (req, res) {
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
       <title>${title}</title>
-      <meta name="description" content=${metaDescription} />
+      <meta name="description" content="${metaDescription}" />
       <meta http-equiv="content-language" content="${metaLanguage}" />
       <meta name="date" content="${metaDate}" />
       <link rel="canonical" href="${relCanonical}" />
@@ -179,8 +184,8 @@ async function infernoServerResponse (req, res) {
       ${twitterRest}
 
       <link rel="stylesheet" type="text/css" href="static/bundle.css" />
-      <script src="static/client.js" defer></script>
-      <script>window.___infernoServerData = ${JSON.stringify(initialData)};</script>
+      <script src="static/browser.js" defer></script>
+      <script>window.___initialData = ${JSON.stringify(initialData)};</script>
     </head>
 
     <body>
@@ -191,6 +196,10 @@ async function infernoServerResponse (req, res) {
     </html>
   `)
   } catch (err) {
-    console.log(err)
+    console.error(err)
+    res.sendStatus(500)
   }
 }
+
+// Sitemap
+// TODO generate sitemap periodically, write to file in ./static

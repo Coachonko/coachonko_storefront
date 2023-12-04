@@ -6,13 +6,13 @@
   "main": "dist/server.js",
   "scripts": {
     "cleanup": "rm -rf dist",
-    "dev:client": "INFERNO_ENV=development WEBPACK_ENV=client webpack --mode=development --config=webpack.config.js",
+    "dev:browser": "INFERNO_ENV=development WEBPACK_ENV=browser webpack --mode=development --config=webpack.config.js",
     "dev:server": "INFERNO_ENV=development WEBPACK_ENV=server webpack --mode=development --config=webpack.config.js",
     "dev:serve": "while [ ! -f dist/server.js ]; do sleep 1; done && node --watch --watch-preserve-output dist/server.js",
-    "dev": "npm run cleanup && (npm run dev:client & npm run dev:server & npm run dev:serve)",
-    "build:client": "INFERNO_ENV=production WEBPACK_ENV=client webpack --mode=production --config=webpack.config.js",
+    "dev": "npm run cleanup && (npm run dev:browser & npm run dev:server & npm run dev:serve)",
+    "build:browser": "INFERNO_ENV=production WEBPACK_ENV=browser webpack --mode=production --config=webpack.config.js",
     "build:server": "INFERNO_ENV=production WEBPACK_ENV=server webpack --mode=production --config=webpack.config.js",
-    "build": "npm run cleanup && npm run build:client && npm run build:server",
+    "build": "npm run cleanup && npm run build:browser && npm run build:server",
     "serve": "node dist/server.js"
   },
   "author": "Coachonko",
