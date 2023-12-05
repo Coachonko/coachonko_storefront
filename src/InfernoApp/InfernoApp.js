@@ -13,8 +13,8 @@ export default class InfernoApp extends Component {
       lastError: null,
       peonyError: null,
       pages: null,
-      posts: null, // TODO change to latestPosts
-      featured: null, // TODO change to object. keys are tag handles, values are arrays of posts
+      latestPosts: null,
+      postsByTag: null,
       postTags: null
     }
 
@@ -39,10 +39,10 @@ export default class InfernoApp extends Component {
           pages={this.state.pages}
           setPages={(newPages) => this.updateAppState('pages', newPages)}
           // Posts
-          posts={this.state.posts}
-          setPosts={(newPosts) => this.updateAppState('posts', newPosts)}
-          featured={this.state.featured}
-          setFeatured={(newFeatured) => this.updateAppState('featured', newFeatured)}
+          latestPosts={this.state.latestPosts}
+          setLatestPosts={(newLatestPosts) => this.updateAppState('latestPosts', newLatestPosts)}
+          postsByTag={this.state.latestPosts}
+          setpostsByTag={(newPostsByTag) => this.updateAppState('postsByTag', newPostsByTag)}
           postTags={this.state.postTags}
           setPostTags={(newPostTags) => this.updateAppState('postTags', newPostTags)}
           // errors

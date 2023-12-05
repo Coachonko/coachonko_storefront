@@ -54,23 +54,24 @@ export default class Home extends Component {
       }
     }
 
-    if (this.props.posts === null) {
-      this.gettingPosts = makeCancelable(this.getPosts())
-      await this.resolveGettingPosts()
+    if (this.props.latestPosts === null) {
+      this.gettingLatestPosts = makeCancelable(this.getLatestPosts())
+      await this.resolveGettingLatestPosts()
     }
 
     if (this.props.postTags === null) {
       this.gettingPostTags = makeCancelable(this.getPostTags())
       await this.resolveGettingPostTags()
     } else {
-      // featured posts can be fetched now.
-      if (this.props.featured === null) {
+      // posts by tag can be fetched now
+      if (this.props.postsByTag === null) { // TODO check if postsByTag.featured
         const tagHandle = 'featured'
         const featuredId = this.getPostTagId(tagHandle)
         if (featuredId) {
           this.gettingPostsByTag = makeCancelable(this.getPostsByTag(featuredId))
           await this.resolveGettingPostsByTag(tagHandle)
         }
+        // TODO fetch more posts by tag
       }
     }
   }
@@ -84,12 +85,14 @@ export default class Home extends Component {
         this.gettingPostsByTag = makeCancelable(this.getPostsByTag(featuredId))
         await this.resolveGettingPostsByTag(tagHandle)
       }
+
+      // TODO fetch more posts by tag
     }
   }
 
   componentWillUnmount () {
     if (this.gettingPosts) {
-      this.gettingPosts.cancel()
+      this.gettingLatestPosts.cancel()
     }
     if (this.gettingPostTags) {
       this.gettingPostTags.cancel()
@@ -122,7 +125,7 @@ export default class Home extends Component {
     }
   }
 
-  async getPosts () {
+  async getLatestPosts () {
     const response = await fetch(`${config.PEONY_STOREFRONT_API}/posts`, {
       method: 'GET'
     })
@@ -130,14 +133,14 @@ export default class Home extends Component {
     return data
   }
 
-  async resolveGettingPosts () {
+  async resolveGettingLatestPosts () {
     try {
       this.setState({ isFetching: true })
-      const data = await this.gettingPosts.promise
+      const data = await this.gettingLatestPosts.promise
       if (isPeonyError(data)) {
         this.props.setPeonyError(data)
       } else {
-        this.props.setPosts(data)
+        this.props.setLatestPosts(data)
       }
     } catch (error) {
       this.props.setLastError(error)
@@ -147,7 +150,7 @@ export default class Home extends Component {
   }
 
   async getNextPosts () {
-    const offset = this.props.posts.length + 10
+    const offset = this.props.latestPosts.length + 10
     const response = await fetch(`${config.PEONY_STOREFRONT_API}/posts?offset=${offset}`, {
       method: 'GET'
     })
@@ -162,8 +165,8 @@ export default class Home extends Component {
       if (isPeonyError(data)) {
         this.props.setPeonyError(data)
       } else {
-        const newPostsArray = [...this.props.posts, ...data]
-        this.props.setPosts(newPostsArray)
+        const newPostsArray = [...this.props.latestPosts, ...data]
+        this.props.setLatestPosts(newPostsArray)
       }
     } catch (error) {
       this.props.setLastError(error)
@@ -219,8 +222,8 @@ export default class Home extends Component {
       if (isPeonyError(data)) {
         this.props.setPeonyError(data)
       } else {
-        // TODO set by handle
-        this.props.setFeatured(data)
+        // TODO set correctly {..., [handle]: data}
+        this.props.setPostsByTag(data)
       }
     } catch (error) {
       this.props.setLastError(error)
@@ -230,14 +233,30 @@ export default class Home extends Component {
   }
 
   render () {
+    let featured = null
+    if (this.props.postsByTag && this.props.postsByTag.featured) {
+      featured = this.props.postsByTag.featured
+    }
+    let otherPostsByTags = null
+    if (this.props.postsByTag && Object.keys(this.props.postsByTag).length > 1) {
+      if (this.props.postsByTag.featured) {
+        if (Object.keys(this.props.postsByTag).length > 2) {
+          otherPostsByTags = { ...this.props.postsByTag }
+          delete otherPostsByTags.featured
+        }
+      } else {
+        otherPostsByTags = { ...this.props.postsByTag }
+      }
+    }
+
     return (
       <>
         <Main homeData={this.state.homeData} />
 
         <div className='posts'>
-          <Featured featured={this.props.featured} />
-          <Posts postsData={this.props.posts} />
-          <Tags tags={this.props.postTags} />
+          <Featured featured={featured} />
+          <Posts postsData={this.props.latestPosts} />
+          <LatestPostsByTags otherPostsByTags={otherPostsByTags} />
         </div>
       </>
     )
@@ -306,6 +325,10 @@ function Post ({ key, post }) {
 }
 
 function Featured ({ featured }) {
+  if (featured === null) {
+    return null
+  }
+
   return (
     <div>
       <h3>Featured</h3>
@@ -321,12 +344,17 @@ function sidebarEntry (post) {
   return ('p')
 }
 
-function Tags ({ tags }) {
+function LatestPostsByTags ({ otherPostsByTags }) {
+  if (otherPostsByTags === null) {
+    return null
+  }
+
+  // display the 3 latest post excerpt from each tag
   return (
     <div>
       <h3>Tag</h3>
       <div>
-        {JSON.stringify(tags)}
+        {JSON.stringify(otherPostsByTags)}
       </div>
     </div>
   )

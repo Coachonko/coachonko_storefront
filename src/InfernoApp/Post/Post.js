@@ -36,8 +36,8 @@ export default class Post extends Component {
 
   async componentDidMount () {
     if (this.state.postData === null) {
-      if (this.props.posts) {
-        const matchedPost = this.props.posts.find(post => post.handle === this.props.match.params.handle)
+      if (this.props.latestPosts) {
+        const matchedPost = this.props.latestPosts.find(post => post.handle === this.props.match.params.handle)
         this.setState({ postData: matchedPost })
       } else {
         this.gettingPostData = makeCancelable(Post.getInitialData(this.props.match.params.handle))
