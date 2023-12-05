@@ -12,9 +12,9 @@ export default class InfernoApp extends Component {
     this.state = {
       lastError: null,
       peonyError: null,
-      posts: null,
       pages: null,
-      featured: null,
+      posts: null, // TODO change to latestPosts
+      featured: null, // TODO change to object. keys are tag handles, values are arrays of posts
       postTags: null
     }
 
@@ -35,6 +35,9 @@ export default class InfernoApp extends Component {
         <Routes
           // SSR data
           initialData={this.props.initialData}
+          // Pages
+          pages={this.state.pages}
+          setPages={(newPages) => this.updateAppState('pages', newPages)}
           // Posts
           posts={this.state.posts}
           setPosts={(newPosts) => this.updateAppState('posts', newPosts)}
@@ -42,9 +45,6 @@ export default class InfernoApp extends Component {
           setFeatured={(newFeatured) => this.updateAppState('featured', newFeatured)}
           postTags={this.state.postTags}
           setPostTags={(newPostTags) => this.updateAppState('postTags', newPostTags)}
-          // Pages
-          pages={this.state.pages}
-          setPages={(newPages) => this.updateAppState('pages', newPages)}
           // errors
           setPeonyError={(newPeonyError) => this.updateAppState('peonyError', newPeonyError)}
           setLastError={(newLastError) => this.updateAppState('lastError', newLastError)}

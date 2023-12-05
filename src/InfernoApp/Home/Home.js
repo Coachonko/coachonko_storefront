@@ -54,16 +54,48 @@ export default class Home extends Component {
       }
     }
 
-    this.gettingPosts = makeCancelable(this.getPosts())
-    await this.resolveGettingPosts()
+    if (this.props.posts === null) {
+      this.gettingPosts = makeCancelable(this.getPosts())
+      await this.resolveGettingPosts()
+    }
 
-    this.getingFeaturedPosts = makeCancelable(this.getFeaturedPosts())
-    await this.resolveGettingFeaturedPosts()
+    if (this.props.postTags === null) {
+      this.gettingPostTags = makeCancelable(this.getPostTags())
+      await this.resolveGettingPostTags()
+    } else {
+      // featured posts can be fetched now.
+      if (this.props.featured === null) {
+        const tagHandle = 'featured'
+        const featuredId = this.getPostTagId(tagHandle)
+        if (featuredId) {
+          this.gettingPostsByTag = makeCancelable(this.getPostsByTag(featuredId))
+          await this.resolveGettingPostsByTag(tagHandle)
+        }
+      }
+    }
+  }
+
+  async componentDidUpdate (lastProps) {
+    // fetch featured posts as soon as postTags is available
+    if (lastProps.postTags === null && this.props.postTags) {
+      const tagHandle = 'featured'
+      const featuredId = this.getPostTagId(tagHandle)
+      if (featuredId) {
+        this.gettingPostsByTag = makeCancelable(this.getPostsByTag(featuredId))
+        await this.resolveGettingPostsByTag(tagHandle)
+      }
+    }
   }
 
   componentWillUnmount () {
     if (this.gettingPosts) {
       this.gettingPosts.cancel()
+    }
+    if (this.gettingPostTags) {
+      this.gettingPostTags.cancel()
+    }
+    if (this.gettingPostsByTag) {
+      this.gettingPostsByTag.cancel()
     }
   }
 
@@ -140,23 +172,54 @@ export default class Home extends Component {
     }
   }
 
-  // TODO create a featured tag using the admin frontend, add id to config.
-  // Less efficient method: get list of tags, find the tag with handle featured and use its id.
-  async getFeaturedPosts () {
-    const response = await fetch(`${config.PEONY_STOREFRONT_API}/posts?filter_tags=${config.FEATURED_TAG_ID}`, {
+  async getPostTags () {
+    const response = await fetch(`${config.PEONY_STOREFRONT_API}/post_tags`, {
       method: 'GET'
     })
     const data = await response.json()
     return data
   }
 
-  async resolveGettingFeaturedPosts () {
+  async resolveGettingPostTags () {
     try {
       this.setState({ isFetching: true })
-      const data = await this.gettingFeaturedPosts.promise
+      const data = await this.gettingPostTags.promise
       if (isPeonyError(data)) {
         this.props.setPeonyError(data)
       } else {
+        this.props.setPostTags(data)
+      }
+    } catch (error) {
+      this.props.setLastError(error)
+    } finally {
+      this.setState({ isFetching: false })
+    }
+  }
+
+  getPostTagId (handle) {
+    for (let i = 0; i < this.props.postTags.length; i++) {
+      if (this.props.postTags[i].handle === 'featured') {
+        return this.props.postTags[i].id
+      }
+    }
+  }
+
+  async getPostsByTag (handle) {
+    const response = await fetch(`${config.PEONY_STOREFRONT_API}/posts?filter_tags=${handle}`, {
+      method: 'GET'
+    })
+    const data = await response.json()
+    return data
+  }
+
+  async resolveGettingPostsByTag (handle) {
+    try {
+      this.setState({ isFetching: true })
+      const data = await this.gettingPostsByTag.promise
+      if (isPeonyError(data)) {
+        this.props.setPeonyError(data)
+      } else {
+        // TODO set by handle
         this.props.setFeatured(data)
       }
     } catch (error) {
@@ -171,15 +234,11 @@ export default class Home extends Component {
       <>
         <Main homeData={this.state.homeData} />
 
-        {/* left sidebar
-        <Featured />
-        */}
-
-        <Posts postsData={this.props.posts} />
-
-        {/* right sidebar
-        <Tags />
-        */}
+        <div className='posts'>
+          <Featured featured={this.props.featured} />
+          <Posts postsData={this.props.posts} />
+          <Tags tags={this.props.postTags} />
+        </div>
       </>
     )
   }
@@ -243,5 +302,32 @@ function Post ({ key, post }) {
         </div>
       </Link>
     </li>
+  )
+}
+
+function Featured ({ featured }) {
+  return (
+    <div>
+      <h3>Featured</h3>
+      {/* TODO make component */}
+      <div>
+        {JSON.stringify(featured)}
+      </div>
+    </div>
+  )
+}
+
+function sidebarEntry (post) {
+  return ('p')
+}
+
+function Tags ({ tags }) {
+  return (
+    <div>
+      <h3>Tag</h3>
+      <div>
+        {JSON.stringify(tags)}
+      </div>
+    </div>
   )
 }
