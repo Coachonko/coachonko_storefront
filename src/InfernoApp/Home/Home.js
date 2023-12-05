@@ -59,40 +59,45 @@ export default class Home extends Component {
       await this.resolveGettingLatestPosts()
     }
 
-    if (this.props.postTags === null) {
-      this.gettingPostTags = makeCancelable(this.getPostTags())
-      await this.resolveGettingPostTags()
+    if (this.props.postsByTag === null) {
+      // Get all needed posts
+      if (this.props.postTags === null) {
+        this.gettingPostTags = makeCancelable(this.getPostTags())
+        await this.resolveGettingPostTags()
+      }
+      const tagsToFetch = [...config.HOME_TAGS, 'featured']
+      for (let i = 0; i < tagsToFetch.length; i++) {
+        const tagId = this.getPostTagId(tagsToFetch[i]) // TODO if tagId not exists, set error
+        this.gettingPostsByTag = makeCancelable(this.getPostsByTag(tagId))
+        await this.resolveGettingPostsByTag(tagsToFetch[i])
+      }
     } else {
-      // posts by tag can be fetched now
-      if (this.props.postsByTag === null) { // TODO check if postsByTag.featured
-        const tagHandle = 'featured'
-        const featuredId = this.getPostTagId(tagHandle)
-        if (featuredId) {
-          this.gettingPostsByTag = makeCancelable(this.getPostsByTag(featuredId))
-          await this.resolveGettingPostsByTag(tagHandle)
+      // Get only missing posts
+      if (this.props.postTags === null) {
+        this.gettingPostTags = makeCancelable(this.getPostTags())
+        await this.resolveGettingPostTags()
+      }
+      const tagsNeeded = [...config.HOME_TAGS, 'featured']
+      const tagsToFetch = []
+      for (let i = 0; i < tagsNeeded.length; i++) {
+        if (!this.props.postsByTag[tagsNeeded[i]]) {
+          tagsToFetch.push(tagsNeeded[i])
         }
-        // TODO fetch more posts by tag
       }
-    }
-  }
-
-  async componentDidUpdate (lastProps) {
-    // fetch featured posts as soon as postTags is available
-    if (lastProps.postTags === null && this.props.postTags) {
-      const tagHandle = 'featured'
-      const featuredId = this.getPostTagId(tagHandle)
-      if (featuredId) {
-        this.gettingPostsByTag = makeCancelable(this.getPostsByTag(featuredId))
-        await this.resolveGettingPostsByTag(tagHandle)
+      for (let i = 0; i < tagsToFetch.length; i++) {
+        const tagId = this.getPostTagId(tagsToFetch[i]) // TODO if tagId not exists, set error
+        this.gettingPostsByTag = makeCancelable(this.getPostsByTag(tagId))
+        await this.resolveGettingPostsByTag(tagsToFetch[i])
       }
-
-      // TODO fetch more posts by tag
     }
   }
 
   componentWillUnmount () {
     if (this.gettingPosts) {
       this.gettingLatestPosts.cancel()
+    }
+    if (this.gettingNextPosts) {
+      this.gettingNextPosts.cancel()
     }
     if (this.gettingPostTags) {
       this.gettingPostTags.cancel()

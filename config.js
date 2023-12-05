@@ -3,5 +3,5 @@ export const config = {
   PEONY_AUTH_HEADER: 'Peony-Session',
   PORT: 29200,
   BASE_URL: 'http://localhost:29200',
-  FEATURED_TAG_ID: ''
+  HOME_TAGS: []
 }
