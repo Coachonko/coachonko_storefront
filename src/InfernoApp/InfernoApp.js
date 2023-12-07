@@ -41,8 +41,8 @@ export default class InfernoApp extends Component {
           // Posts
           latestPosts={this.state.latestPosts}
           setLatestPosts={(newLatestPosts) => this.updateAppState('latestPosts', newLatestPosts)}
-          postsByTag={this.state.latestPosts}
-          setpostsByTag={(newPostsByTag) => this.updateAppState('postsByTag', newPostsByTag)}
+          postsByTag={this.state.postsByTag}
+          setPostsByTag={(newPostsByTag) => this.updateAppState('postsByTag', newPostsByTag)}
           postTags={this.state.postTags}
           setPostTags={(newPostTags) => this.updateAppState('postTags', newPostTags)}
           // errors

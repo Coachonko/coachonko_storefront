@@ -213,6 +213,7 @@ export default class Home extends Component {
   }
 
   async getPostsByTag (handle) {
+    // TODO limit number of posts to get (sidebar)
     const response = await fetch(`${config.PEONY_STOREFRONT_API}/posts?filter_tags=${handle}`, {
       method: 'GET'
     })
@@ -227,8 +228,8 @@ export default class Home extends Component {
       if (isPeonyError(data)) {
         this.props.setPeonyError(data)
       } else {
-        // TODO set correctly {..., [handle]: data}
-        this.props.setPostsByTag(data)
+        const newPostsByTag = { ...this.props.postsByTag, [handle]: data }
+        this.props.setPostsByTag(newPostsByTag)
       }
     } catch (error) {
       this.props.setLastError(error)
