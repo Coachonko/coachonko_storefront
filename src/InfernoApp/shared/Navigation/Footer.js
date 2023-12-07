@@ -1,5 +1,7 @@
 import { Link } from 'inferno-router'
 
+import { config } from '../../../../config'
+
 export default function Footer () {
   const copyrightYear = new Date().getFullYear()
   return (
@@ -9,8 +11,8 @@ export default function Footer () {
         <span>Thanks for reading.</span>
         <br />
 
-        <Link to='/contact'>contact</Link>
-        <Link to='/privacy'>privacy</Link>
+        <Link to={`${config.BASE_URL}/contact`}>contact</Link>
+        <Link to={`${config.BASE_URL}/privacy`}>privacy</Link>
         <br />
         <Link to='https://github.com/Coachonko'>Github</Link>
         <Link to='https://www.twitch.tv/coachonko'>Twitch</Link>
@@ -18,7 +20,7 @@ export default function Footer () {
 
       <div className='right'>
         {/* TODO newsletter */}
-        <Link to='https://coachonko.com'>© Coachonko {copyrightYear}</Link>
+        <Link to={config.BASE_URL}>© Coachonko {copyrightYear}</Link>
       </div>
     </footer>
   )

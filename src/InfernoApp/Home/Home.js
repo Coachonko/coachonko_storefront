@@ -260,9 +260,9 @@ export default class Home extends Component {
         <Main homeData={this.state.homeData} />
 
         <div className='posts'>
-          <Sidebar postsByTag={postsByFeatured} />
+          <Sidebar postTags={this.props.postTags} postsByTag={postsByFeatured} />
           <Posts postsData={this.props.latestPosts} />
-          <Sidebar postsByTag={otherPostsByTags} />
+          <Sidebar postTags={this.props.postTags} postsByTag={otherPostsByTags} />
         </div>
       </>
     )
@@ -309,14 +309,14 @@ function Post ({ key, post }) {
   let tag
   if (post.tags.length > 0) {
     const primaryTag = post.tags[0]
-    tag = <Link to={`/tag/${primaryTag.handle}`}>{primaryTag.title}</Link>
+    tag = <Link to={`${config.BASE_URL}/tag/${primaryTag.handle}`}>{primaryTag.title}</Link>
   }
 
   const updatedAt = new Date(post.updatedAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })
 
   return (
     <li key={key}>
-      <Link to={`/post/${post.handle}`}>
+      <Link to={`${config.BASE_URL}/post/${post.handle}`}>
         <div>
           {tag}
           <h3>{post.title}</h3>
@@ -333,7 +333,7 @@ function Post ({ key, post }) {
 // Accepts an object, expects that all of its properties are arrays of posts.
 // If the object contains one tag, that tag will be rendered.
 // If the object contains more than one tag, the tag names in config.HOME_TAGS will be rendered.
-function Sidebar ({ postsByTag }) {
+function Sidebar ({ postTags, postsByTag }) {
   if (postsByTag === null) {
     return null
   }
@@ -346,20 +346,30 @@ function Sidebar ({ postsByTag }) {
   const tagGroups = []
   for (const tagName of tagsToRender) {
     if (postsByTag[tagName]) {
-      // TODO add Link
       const GroupPosts = []
       for (const post of postsByTag[tagName]) {
         GroupPosts.push(
           <div>
-            <h4>{post.title}</h4>
-            <p>{post.excerpt}</p>
-            {/* TODO decide how to display */}
+            <Link to={`${config.BASE_URL}/post/${post.handle}`}>
+              <h4>{post.title}</h4>
+              <p>{post.excerpt}</p>
+              {/* TODO decide how to display each link */}
+            </Link>
           </div>
         )
       }
+
+      let currentTag
+      for (const tag of postTags) {
+        if (tag.handle === tagName) {
+          currentTag = tag
+        }
+      }
       tagGroups.push(
         <div>
-          <h3>{tagName}</h3>
+          <Link to={`${config.BASE_URL}/tags/${currentTag.handle}`}>
+            <h3>{tagName}</h3>
+          </Link>
           {GroupPosts}
         </div>
       )

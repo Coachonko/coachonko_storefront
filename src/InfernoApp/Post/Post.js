@@ -105,7 +105,7 @@ export default class Post extends Component {
 function LeftColumn ({ title, primaryTag }) {
   let primaryTagLink
   if (primaryTag) {
-    primaryTagLink = <Link to={`/tags/${primaryTag.id}`}>{primaryTag.title}</Link>
+    primaryTagLink = <Link to={`${config.BASE_URL}/tags/${primaryTag.id}`}>{primaryTag.title}</Link>
   }
 
   return (

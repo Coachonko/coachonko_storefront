@@ -1,6 +1,8 @@
 import { Component } from 'inferno'
 import { NavLink } from 'inferno-router'
 
+import { config } from '../../../../config'
+
 export default class Nav extends Component {
   constructor (props) {
     super(props)
@@ -17,13 +19,13 @@ export default class Nav extends Component {
         <nav>
           <ul>
             <li>
-              <NavLink to='/'>Home</NavLink>
+              <NavLink to={`${config.BASE_URL}/`}>Home</NavLink>
             </li>
             <li>
-              <NavLink to='/about'>About</NavLink>
+              <NavLink to={`${config.BASE_URL}/about`}>About</NavLink>
             </li>
             <li>
-              <NavLink to='/contact'>Contact</NavLink>
+              <NavLink to={`${config.BASE_URL}/contact`}>Contact</NavLink>
             </li>
           </ul>
         </nav>
