@@ -331,31 +331,39 @@ function Post ({ key, post }) {
 }
 
 // Accepts an object, expects that all of its properties are arrays of posts.
+// If the object contains one tag, that tag will be rendered.
+// If the object contains more than one tag, the tag names in config.HOME_TAGS will be rendered.
 function Sidebar ({ postsByTag }) {
   if (postsByTag === null) {
     return null
   }
 
+  let tagsToRender = Object.keys(postsByTag)
+  if (tagsToRender.length > 1) {
+    tagsToRender = config.HOME_TAGS
+  }
+
   const tagGroups = []
-  for (const tagName in postsByTag) {
-    // TODO follow order of config.HOME_TAGS
-    const GroupPosts = []
-    for (const post of postsByTag[tagName]) {
+  for (const tagName of tagsToRender) {
+    if (postsByTag[tagName]) {
       // TODO add Link
-      GroupPosts.push(
+      const GroupPosts = []
+      for (const post of postsByTag[tagName]) {
+        GroupPosts.push(
+          <div>
+            <h4>{post.title}</h4>
+            <p>{post.excerpt}</p>
+            {/* TODO decide how to display */}
+          </div>
+        )
+      }
+      tagGroups.push(
         <div>
-          <h4>{post.title}</h4>
-          <p>{post.excerpt}</p>
-          {/* TODO decide how to display */}
+          <h3>{tagName}</h3>
+          {GroupPosts}
         </div>
       )
     }
-    tagGroups.push(
-      <div>
-        <h3>{tagName}</h3>
-        {GroupPosts}
-      </div>
-    )
   }
 
   // TODO display the 3 latest post excerpt from each tag
