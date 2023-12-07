@@ -206,7 +206,7 @@ export default class Home extends Component {
 
   getPostTagId (handle) {
     for (let i = 0; i < this.props.postTags.length; i++) {
-      if (this.props.postTags[i].handle === 'featured') {
+      if (this.props.postTags[i].handle === handle) {
         return this.props.postTags[i].id
       }
     }
@@ -239,14 +239,14 @@ export default class Home extends Component {
   }
 
   render () {
-    let featured = null
+    let postsByFeatured = null
     if (this.props.postsByTag && this.props.postsByTag.featured) {
-      featured = this.props.postsByTag.featured
+      postsByFeatured = { featured: this.props.postsByTag.featured }
     }
     let otherPostsByTags = null
-    if (this.props.postsByTag && Object.keys(this.props.postsByTag).length > 1) {
+    if (this.props.postsByTag && Object.keys(this.props.postsByTag).length > 0) {
       if (this.props.postsByTag.featured) {
-        if (Object.keys(this.props.postsByTag).length > 2) {
+        if (Object.keys(this.props.postsByTag).length > 1) {
           otherPostsByTags = { ...this.props.postsByTag }
           delete otherPostsByTags.featured
         }
@@ -260,9 +260,9 @@ export default class Home extends Component {
         <Main homeData={this.state.homeData} />
 
         <div className='posts'>
-          <Featured featured={featured} />
+          <Sidebar postsByTag={postsByFeatured} />
           <Posts postsData={this.props.latestPosts} />
-          <LatestPostsByTags otherPostsByTags={otherPostsByTags} />
+          <Sidebar postsByTag={otherPostsByTags} />
         </div>
       </>
     )
@@ -330,38 +330,34 @@ function Post ({ key, post }) {
   )
 }
 
-function Featured ({ featured }) {
-  if (featured === null) {
+// Accepts an object, expects that all of its properties are arrays of posts.
+function Sidebar ({ postsByTag }) {
+  if (postsByTag === null) {
     return null
   }
 
-  return (
-    <div>
-      <h3>Featured</h3>
-      {/* TODO make component */}
+  const tagGroups = []
+  for (const tagName in postsByTag) {
+    // TODO follow order of config.HOME_TAGS
+    const GroupPosts = []
+    for (const post of postsByTag[tagName]) {
+      // TODO add Link
+      GroupPosts.push(
+        <div>
+          <h4>{post.title}</h4>
+          <p>{post.excerpt}</p>
+          {/* TODO decide how to display */}
+        </div>
+      )
+    }
+    tagGroups.push(
       <div>
-        {JSON.stringify(featured)}
+        <h3>{tagName}</h3>
+        {GroupPosts}
       </div>
-    </div>
-  )
-}
-
-function sidebarEntry (post) {
-  return ('p')
-}
-
-function LatestPostsByTags ({ otherPostsByTags }) {
-  if (otherPostsByTags === null) {
-    return null
+    )
   }
 
-  // display the 3 latest post excerpt from each tag
-  return (
-    <div>
-      <h3>Tag</h3>
-      <div>
-        {JSON.stringify(otherPostsByTags)}
-      </div>
-    </div>
-  )
+  // TODO display the 3 latest post excerpt from each tag
+  return tagGroups
 }
