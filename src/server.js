@@ -1,4 +1,5 @@
 import { resolve } from 'node:path'
+import { createWriteStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { App as TinyhttpApp } from '@tinyhttp/app'
 import { renderToString } from 'inferno-server'
@@ -15,6 +16,11 @@ app.get('/api/auth', (req, res) => {
   res.send('use this route for setting cookies')
 })
 
+app.get('/api/sitemap', async (req, res) => {
+  await generateSitemap()
+  res.sendStatus(200)
+})
+
 // Serve static files during development.
 // Note: in production, configure lighttpd to serve static files instead.
 app.get('/static/*', async (req, res) => {
@@ -23,10 +29,12 @@ app.get('/static/*', async (req, res) => {
 
 // Redirect requests for static files in dist/ to dist/static/
 // Note: in production, configure lighttpd to serve these static files too.
-app.get('/favicon.ico', async (req, res) => {
-  const adjustedPath = `static${req.path}`
+async function handleStaticFile (req, res) {
+  const adjustedPath = `/static${req.path}`
   return await fileResponse(adjustedPath, res)
-})
+}
+app.get('/favicon.ico', handleStaticFile)
+app.get('/sitemap.xml', handleStaticFile)
 
 // Every other route can be handled by inferno-router
 app.get('/*', async (req, res) => {
@@ -52,6 +60,41 @@ async function fileResponse (path, res) {
   }
 }
 
+// generateSitemap
+//
+async function generateSitemap () {
+  const stream = createWriteStream('dist/static/sitemap.xml')
+  stream.write('<?xml version="1.0" encoding="UTF-8"?>')
+
+  // handle pages
+  try {
+    const response = await fetch(`${config.PEONY_STOREFRONT_API}/pages`, {
+      method: 'GET'
+    })
+    const data = await response.json()
+
+    stream.write('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+    for (const page of data) {
+      // TODO map handle home to '' or find another solution
+      stream.write(`
+        <url>
+           <loc>${config.BASE_URL}/${page.handle}</loc>
+           <lastmod>2022-02-01</lastmod>
+           <changefreq>monthly</changefreq>
+           <priority>1.0</priority>
+        </url>
+      `)
+    }
+    stream.write('</urlset>')
+  } catch (error) {
+
+  }
+  // handle posts
+  // handle postTags
+}
+
+// infernoServerResponse
+//
 async function infernoServerResponse (req, res) {
   try {
     let currentRoute = routes.find((route) => matchPath(req.url, route))
