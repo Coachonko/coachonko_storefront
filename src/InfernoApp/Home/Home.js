@@ -347,7 +347,13 @@ function Sidebar ({ postTags, postsByTag }) {
   for (const tagName of tagsToRender) {
     if (postsByTag[tagName]) {
       const GroupPosts = []
-      for (const post of postsByTag[tagName]) {
+      // Only display the latest 3 posts from each tag, or however many are available.
+      let maxPosts = 3
+      if (postsByTag[tagName].length < 3) {
+        maxPosts = postsByTag[tagName].length
+      }
+      for (let i = 0; i < maxPosts; i++) {
+        const post = postsByTag[tagName][i]
         GroupPosts.push(
           <div>
             <Link to={`${config.BASE_URL}/post/${post.handle}`}>
