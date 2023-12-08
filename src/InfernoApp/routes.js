@@ -10,7 +10,8 @@ export const routes = [
     path: '/',
     component: Home,
     wrapper: AppRoute,
-    getInitialData: Home.getInitialData
+    getInitialData: Home.getInitialData,
+    sitemap: true
   },
   {
     exact: true,

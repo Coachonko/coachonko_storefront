@@ -17,8 +17,13 @@ app.get('/api/auth', (req, res) => {
 })
 
 app.get('/api/sitemap', async (req, res) => {
-  await generateSitemap()
-  res.sendStatus(200)
+  try {
+    await generateSitemap()
+    res.sendStatus(200)
+  } catch (err) {
+    // TODO handle errors
+    res.sendStatus(500)
+  }
 })
 
 // Serve static files during development.
@@ -62,35 +67,49 @@ async function fileResponse (path, res) {
 
 // generateSitemap
 //
-async function generateSitemap () {
-  const stream = createWriteStream('dist/static/sitemap.xml')
-  stream.write('<?xml version="1.0" encoding="UTF-8"?>')
-
-  // handle pages
+async function generateSitemap (req, res) {
   try {
-    const response = await fetch(`${config.PEONY_STOREFRONT_API}/pages`, {
-      method: 'GET'
-    })
-    const data = await response.json()
+    const stream = createWriteStream('dist/static/sitemap.xml')
+    stream.write(`<?xml version="1.0" encoding="UTF-8"?>
+      <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`)
 
-    stream.write('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
-    for (const page of data) {
-      // TODO map handle home to '' or find another solution
-      stream.write(`
-        <url>
-           <loc>${config.BASE_URL}/${page.handle}</loc>
-           <lastmod>2022-02-01</lastmod>
-           <changefreq>monthly</changefreq>
-           <priority>1.0</priority>
-        </url>
-      `)
+    // handle pages
+    // <loc> is not used because changes may happen on either API or this application.
+    for (const route of routes) {
+      if (route.sitemap === true) {
+        stream.write(`
+          <url>
+            <loc>${config.BASE_URL}${route.path}</loc>
+          </url>`)
+      }
     }
-    stream.write('</urlset>')
-  } catch (error) {
+    // handle posts
+    const postsResponse = await fetch(`${config.PEONY_STOREFRONT_API}/posts`)
+    const postsData = await postsResponse.json()
+    for (const post of postsData) {
+      stream.write(`
+      <url>
+        <loc>${config.BASE_URL}/post/${post.handle}</loc>
+        <lastmod>${post.updatedAt}</lastmod>
+      </url>`)
+    }
 
+    // handle postTags
+    const postTagsResponse = await fetch(`${config.PEONY_STOREFRONT_API}/post_tags`)
+    const postTagsData = await postTagsResponse.json()
+    for (const postTag of postTagsData) {
+      stream.write(`
+      <url>
+        <loc>${config.BASE_URL}/post/${postTag.handle}</loc>
+        <lastmod>${postTag.updatedAt}</lastmod>
+      </url>`)
+    }
+
+    stream.write('</urlset>')
+  } catch (err) {
+    // TODO handle errors
+    console.error(err)
   }
-  // handle posts
-  // handle postTags
 }
 
 // infernoServerResponse
@@ -239,10 +258,8 @@ async function infernoServerResponse (req, res) {
     </html>
   `)
   } catch (err) {
+    // TODO handle errors
     console.error(err)
     res.sendStatus(500)
   }
 }
-
-// Sitemap
-// TODO generate sitemap periodically, write to file in ./static
