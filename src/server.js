@@ -115,7 +115,7 @@ async function generateSitemap (req, res) {
     for (const postTag of postTagsData) {
       stream.write(`
       <url>
-        <loc>${config.BASE_URL}/tags/${postTag.handle}</loc>
+        <loc>${config.BASE_URL}/post_tag/${postTag.handle}</loc>
         <lastmod>${postTag.updatedAt}</lastmod>
       </url>`)
     }
@@ -137,6 +137,7 @@ async function infernoServerResponse (req, res) {
     }
 
     let initialData = {}
+    let windowInitialData = ''
     // Invoke the static method defined in the getInitialData property of the route to get initialData.
     // This is used by routes that need API data.
     if (currentRoute.getInitialData) {
@@ -146,6 +147,7 @@ async function infernoServerResponse (req, res) {
         throw new Error(err)
       }
       initialData = await response.json()
+      windowInitialData = `<script>window.___initialData = ${JSON.stringify(initialData)};</script>`
     }
 
     const context = { initialData }
@@ -272,7 +274,7 @@ async function infernoServerResponse (req, res) {
 
       <link rel="stylesheet" type="text/css" href="static/bundle.css" />
       <script src="/static/browser.js" defer></script>
-      <script>window.___initialData = ${JSON.stringify(initialData)};</script>
+      ${windowInitialData}
     </head>
 
     <body>
