@@ -88,10 +88,8 @@ export default class PostTag extends Component {
       return null
     }
 
-    if (isPeonyError(this.state.postTagData)) {
-      if (this.state.postTagData.code === 404) {
-        return <Redirect to='/404' />
-      }
+    if (this.state.postTagData.length === 0) {
+      return <Redirect to='/404' />
     }
 
     if (this.state.isFetching === true) {
