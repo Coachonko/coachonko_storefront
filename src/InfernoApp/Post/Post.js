@@ -8,9 +8,7 @@ import { isPeonyError } from '../../utils/peony'
 export default class Post extends Component {
   static async getInitialData (url) {
     const handle = url.split('/').pop()
-    return fetch(`${config.PEONY_STOREFRONT_API}/posts/handle/${handle}`, {
-      method: 'GET'
-    })
+    return fetch(`${config.PEONY_STOREFRONT_API}/posts/handle/${handle}`)
   }
 
   constructor (props) {

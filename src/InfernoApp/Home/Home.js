@@ -6,54 +6,27 @@ import { isPeonyError } from '../../utils/peony'
 import { makeCancelable } from '../../utils/promises'
 
 export default class Home extends Component {
-  static async getInitialData () {
-    return fetch(`${config.PEONY_STOREFRONT_API}/posts/handle/home`, {
-      method: 'GET'
-    })
+  static initialData = {
+    metadata: {
+      title: "Coachonko's blog",
+      description: 'Exercise physiologist and web developer',
+      // ogTitle: '',
+      // ogDescription: '',
+      // twitterTitle: '',
+      // twitterDescription: '',
+      sidebarTags: ['training']
+    }
   }
 
   constructor (props) {
     super(props)
 
-    let initialData
-    if (typeof window === 'undefined') {
-      initialData = this.props.staticContext.initialData
-    } else {
-      if (window.___initialData) {
-        initialData = window.___initialData
-        delete window.___initialData
-      } else {
-        initialData = null
-      }
-    }
-
     this.state = {
-      isFetching: false,
-      homeData: initialData
+      isFetching: false
     }
   }
 
   async componentDidMount () {
-    // Check SSR data set by constructor
-    if (this.state.homeData === null) {
-      // Check App state
-      if (this.props.pages && this.props.pages.home) {
-        this.setState({ homeData: this.props.pages.home })
-      } else {
-        this.gettingHomeData = makeCancelable(Home.getInitialData())
-        await this.resolveGettingHomeData()
-      }
-    } else {
-      if (this.props.pages === null || !this.props.pages.home) {
-        let newPages = {}
-        newPages = {
-          ...this.props.pages,
-          [this.state.homeData.handle]: this.state.homeData
-        }
-        this.props.setPages(newPages)
-      }
-    }
-
     if (this.props.latestPosts === null) {
       this.gettingLatestPosts = makeCancelable(this.getLatestPosts())
       await this.resolveGettingLatestPosts()
@@ -65,7 +38,7 @@ export default class Home extends Component {
         this.gettingPostTags = makeCancelable(this.getPostTags())
         await this.resolveGettingPostTags()
       }
-      const tagsToFetch = [...config.HOME_TAGS, 'featured']
+      const tagsToFetch = [...Home.initialData.metadata.sidebarTags, 'featured']
       for (let i = 0; i < tagsToFetch.length; i++) {
         const tagId = this.getPostTagId(tagsToFetch[i]) // TODO if tagId not exists, set error
         this.gettingPostsByTag = makeCancelable(this.getPostsByTag(tagId))
@@ -77,7 +50,7 @@ export default class Home extends Component {
         this.gettingPostTags = makeCancelable(this.getPostTags())
         await this.resolveGettingPostTags()
       }
-      const tagsNeeded = [...config.HOME_TAGS, 'featured']
+      const tagsNeeded = [...Home.initialData.metadata.sidebarTags, 'featured']
       const tagsToFetch = []
       for (let i = 0; i < tagsNeeded.length; i++) {
         if (!this.props.postsByTag[tagsNeeded[i]]) {
@@ -107,31 +80,8 @@ export default class Home extends Component {
     }
   }
 
-  async resolveGettingHomeData () {
-    try {
-      this.setState({ isFetching: true })
-      const response = await this.gettingHomeData.promise
-      const data = await response.json()
-      if (isPeonyError(data)) {
-        this.props.setPeonyError(data)
-      } else {
-        let newPages = {}
-        newPages = {
-          ...this.props.pages,
-          [data.handle]: data
-        }
-        this.props.setPages(newPages)
-        this.setState({ homeData: data })
-      }
-    } catch (error) {
-      this.props.setLastError(error)
-    } finally {
-      this.setState({ isFetching: false })
-    }
-  }
-
   async getLatestPosts () {
-    const response = await fetch(`${config.PEONY_STOREFRONT_API}/posts`, {
+    const response = await fetch(`${config.PEONY_STOREFRONT_API}/posts?limit=10`, {
       method: 'GET'
     })
     const data = await response.json()
@@ -257,7 +207,7 @@ export default class Home extends Component {
 
     return (
       <>
-        <Main homeData={this.state.homeData} />
+        <Header />
 
         <div className='posts'>
           <Sidebar postTags={this.props.postTags} postsByTag={postsByFeatured} />
@@ -269,17 +219,13 @@ export default class Home extends Component {
   }
 }
 
-function Main ({ homeData }) {
-  if (homeData === null) {
-    return null
-  }
-
+function Header () {
   return (
-    <main>
-      <h1>{homeData.title}</h1>
-      <span>{homeData.subtitle}</span>
-      <div dangerouslySetInnerHTML={{ __html: homeData.content }} />
-    </main>
+    <header>
+      <h1 className='title'>Coachonko's blog</h1>
+      <span className='subtitle'>I may post unique or redundant, high or low quality information, at any given moment</span>
+      <p className='content'>hmms</p>
+    </header>
   )
 }
 
@@ -382,6 +328,5 @@ function Sidebar ({ postTags, postsByTag }) {
     }
   }
 
-  // TODO display the 3 latest post excerpt from each tag
   return tagGroups
 }

@@ -4,7 +4,5 @@ export const config = {
   // Port used by the tinyhttp server
   PORT: 29200,
   // URL used for all links, <head> elements and sitemap
-  BASE_URL: 'http://localhost:29200',
-  // Tags to display in the homepage sidebar
-  HOME_TAGS: ['training']
+  BASE_URL: 'http://localhost:29200'
 }
