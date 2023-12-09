@@ -9,7 +9,7 @@ import { resolveGettingPostsByTag } from '../../utils/data'
 export default class PostTag extends Component {
   static async getInitialData (url) {
     const handle = url.split('/').pop()
-    return fetch(`${config.PEONY_STOREFRONT_API}/post_tags/handle/${handle}`)
+    return fetch(`${config.PEONY_STOREFRONT_API}/post_tags?filter_handle=${handle}`)
   }
 
   constructor (props) {
