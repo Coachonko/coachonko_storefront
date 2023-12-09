@@ -1,5 +1,5 @@
 import { Component } from 'inferno'
-import { Link, Redirect } from 'inferno-router'
+import { Link } from 'inferno-router'
 
 import { config } from '../../../config'
 import { makeCancelable } from '../../utils/promises'
@@ -14,15 +14,13 @@ export default class Post extends Component {
   constructor (props) {
     super(props)
 
-    let initialData
+    let initialData = null
     if (typeof window === 'undefined') {
       initialData = this.props.staticContext.initialData
     } else {
       if (window.___initialData) {
         initialData = window.___initialData
         delete window.___initialData
-      } else {
-        initialData = null
       }
     }
 
@@ -34,10 +32,18 @@ export default class Post extends Component {
 
   async componentDidMount () {
     if (this.state.postData === null) {
+      // Get postData from InfernoApp if available
       if (this.props.latestPosts) {
-        const matchedPost = this.props.latestPosts.find(post => post.handle === this.props.match.params.handle)
+        let matchedPost
+        for (const post of this.props.latestPosts) {
+          if (post.handle === this.props.match.params.handle) {
+            matchedPost = post
+            break
+          }
+        }
         this.setState({ postData: matchedPost })
       } else {
+        // Get postData from peony
         this.gettingPostData = makeCancelable(Post.getInitialData(this.props.match.params.handle))
         await this.resolveGettingPostData()
       }
@@ -60,50 +66,50 @@ export default class Post extends Component {
       } else {
         this.setState({ postData: data })
       }
-    } catch (error) {
-      this.props.setLastError(error)
+    } catch (err) {
+      this.props.setLastError(err)
     } finally {
       this.setState({ isFetching: false })
     }
   }
 
   render () {
-    if (this.state.peonyError) {
-      if (this.state.peonyError.code === 404) {
-        return <Redirect to='/404' />
-      }
+    if (this.state.postData === null) {
+      return null
     }
 
-    if (this.state.postData) {
-      let primaryTag
-      if (this.state.postData.tags) {
-        primaryTag = this.state.postData.tags[0]
-      }
-
-      return (
-        <>
-          <LeftColumn
-            title={this.state.postData.title}
-            primaryTag={primaryTag}
-          />
-          <RightColumn post={this.state.postData} />
-          <BottomRow />
-        </>
-      )
-    } else {
+    if (this.state.isFetching === true) {
       return (
         <div>
           loading
         </div>
       )
     }
+
+    let primaryTag
+    if (this.state.postData.tags) {
+      primaryTag = this.state.postData.tags[0]
+    }
+    return (
+      <>
+        <LeftColumn
+          title={this.state.postData.title}
+          primaryTag={primaryTag}
+        />
+        <RightColumn post={this.state.postData} />
+        <BottomRow
+          postsByTag={this.props.postsByTag}
+          primaryTag={primaryTag}
+        />
+      </>
+    )
   }
 }
 
 function LeftColumn ({ title, primaryTag }) {
   let primaryTagLink
   if (primaryTag) {
-    primaryTagLink = <Link to={`${config.BASE_URL}/tags/${primaryTag.id}`}>{primaryTag.title}</Link>
+    primaryTagLink = <Link to={`${config.BASE_URL}/post_tag/${primaryTag.handle}`}>{primaryTag.title}</Link>
   }
 
   return (

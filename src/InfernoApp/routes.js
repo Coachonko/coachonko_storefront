@@ -19,8 +19,8 @@ export const routes = [
     exact: true,
     path: '/contact',
     component: Contact,
-    wrapper: AppRoute
-    // TODO seo: ContactSEO and use in server.js
+    wrapper: AppRoute,
+    initialData: Contact.initialData
   },
   {
     exact: true,

@@ -12,7 +12,7 @@ export default function Footer () {
         <br />
 
         <Link to={`${config.BASE_URL}/contact`}>contact</Link>
-        <Link to={`${config.BASE_URL}/privacy`}>privacy</Link>
+        <Link to={`${config.BASE_URL}/page/privacy`}>privacy</Link>
         <br />
         <Link to='https://github.com/Coachonko'>Github</Link>
         <Link to='https://www.twitch.tv/coachonko'>Twitch</Link>

@@ -1,4 +1,4 @@
-export default function Alerts () {
+export default function Alerts (props) {
   return (
     <div className='alerts'>
       {null}

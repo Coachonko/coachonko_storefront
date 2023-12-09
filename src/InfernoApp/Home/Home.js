@@ -2,7 +2,8 @@ import { Component } from 'inferno'
 import { Link } from 'inferno-router'
 
 import { config } from '../../../config'
-import { isPeonyError } from '../../utils/peony'
+import { isPeonyError, getPostsByTag } from '../../utils/peony'
+import { resolveGettingPostsByTag } from '../../utils/data'
 import { makeCancelable } from '../../utils/promises'
 
 export default class Home extends Component {
@@ -41,8 +42,8 @@ export default class Home extends Component {
       const tagsToFetch = [...Home.initialData.metadata.sidebarTags, 'featured']
       for (let i = 0; i < tagsToFetch.length; i++) {
         const tagId = this.getPostTagId(tagsToFetch[i]) // TODO if tagId not exists, set error
-        this.gettingPostsByTag = makeCancelable(this.getPostsByTag(tagId))
-        await this.resolveGettingPostsByTag(tagsToFetch[i])
+        this.gettingPostsByTag = makeCancelable(getPostsByTag(tagId, 'limit=3'))
+        await resolveGettingPostsByTag(this, tagsToFetch[i])
       }
     } else {
       // Get only missing posts
@@ -59,8 +60,8 @@ export default class Home extends Component {
       }
       for (let i = 0; i < tagsToFetch.length; i++) {
         const tagId = this.getPostTagId(tagsToFetch[i]) // TODO if tagId not exists, set error
-        this.gettingPostsByTag = makeCancelable(this.getPostsByTag(tagId))
-        await this.resolveGettingPostsByTag(tagsToFetch[i])
+        this.gettingPostsByTag = makeCancelable(getPostsByTag(tagId, 'limit=3'))
+        await resolveGettingPostsByTag(this, tagsToFetch[i])
       }
     }
   }
@@ -162,32 +163,6 @@ export default class Home extends Component {
     }
   }
 
-  async getPostsByTag (handle) {
-    // TODO limit number of posts to get (sidebar)
-    const response = await fetch(`${config.PEONY_STOREFRONT_API}/posts?filter_tags=${handle}`, {
-      method: 'GET'
-    })
-    const data = await response.json()
-    return data
-  }
-
-  async resolveGettingPostsByTag (handle) {
-    try {
-      this.setState({ isFetching: true })
-      const data = await this.gettingPostsByTag.promise
-      if (isPeonyError(data)) {
-        this.props.setPeonyError(data)
-      } else {
-        const newPostsByTag = { ...this.props.postsByTag, [handle]: data }
-        this.props.setPostsByTag(newPostsByTag)
-      }
-    } catch (error) {
-      this.props.setLastError(error)
-    } finally {
-      this.setState({ isFetching: false })
-    }
-  }
-
   render () {
     let postsByFeatured = null
     if (this.props.postsByTag && this.props.postsByTag.featured) {
@@ -255,7 +230,7 @@ function Post ({ key, post }) {
   let tag
   if (post.tags.length > 0) {
     const primaryTag = post.tags[0]
-    tag = <Link to={`${config.BASE_URL}/tag/${primaryTag.handle}`}>{primaryTag.title}</Link>
+    tag = <Link to={`${config.BASE_URL}/post_tag/${primaryTag.handle}`}>{primaryTag.title}</Link>
   }
 
   const updatedAt = new Date(post.updatedAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })
@@ -319,7 +294,7 @@ function Sidebar ({ postTags, postsByTag }) {
       }
       tagGroups.push(
         <div>
-          <Link to={`${config.BASE_URL}/tags/${currentTag.handle}`}>
+          <Link to={`${config.BASE_URL}/post_tag/${currentTag.handle}`}>
             <h3>{tagName}</h3>
           </Link>
           {GroupPosts}
