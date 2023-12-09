@@ -1,4 +1,5 @@
 import { Component } from 'inferno'
+import { Redirect } from 'inferno-router'
 
 import { config } from '../../../config'
 import { isPeonyError } from '../../utils/peony'
@@ -38,7 +39,7 @@ export default class Page extends Component {
       if (this.props.pages && this.props.pages[this.props.match.params.handle]) {
         this.setState({ pageData: this.props.pages[this.props.match.params.handle] })
       } else {
-        this.gettingPageData = makeCancelable(Page.getInitialData())
+        this.gettingPageData = makeCancelable(Page.getInitialData(this.props.match.params.handle))
         await this.resolveGettingPageData()
       }
     } else {
@@ -66,6 +67,7 @@ export default class Page extends Component {
       const data = await response.json()
       if (isPeonyError(data)) {
         this.props.setPeonyError(data)
+        this.setState({ pageData: data })
       } else {
         let newPages = {}
         newPages = {
@@ -83,6 +85,13 @@ export default class Page extends Component {
   }
 
   render () {
+    console.log(this.state.pageData)
+    if (isPeonyError(this.state.pageData)) {
+      if (this.state.pageData.code === 404) {
+        return <Redirect to='/404' />
+      }
+    }
+
     return (
       <>
         <Main pageData={this.state.pageData} />

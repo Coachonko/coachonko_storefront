@@ -1,5 +1,5 @@
 import { Component } from 'inferno'
-import { Link } from 'inferno-router'
+import { Link, Redirect } from 'inferno-router'
 
 import { config } from '../../../config'
 import { makeCancelable } from '../../utils/promises'
@@ -63,6 +63,7 @@ export default class Post extends Component {
       const data = await response.json()
       if (isPeonyError(data)) {
         this.props.setPeonyError(data)
+        this.setState({ postData: data })
       } else {
         this.setState({ postData: data })
       }
@@ -76,6 +77,12 @@ export default class Post extends Component {
   render () {
     if (this.state.postData === null) {
       return null
+    }
+
+    if (isPeonyError(this.state.postData)) {
+      if (this.state.postData.code === 404) {
+        return <Redirect to='/404' />
+      }
     }
 
     if (this.state.isFetching === true) {

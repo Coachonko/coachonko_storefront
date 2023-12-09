@@ -1,5 +1,5 @@
 import { Component } from 'inferno'
-import { Link } from 'inferno-router'
+import { Link, Redirect } from 'inferno-router'
 
 import { config } from '../../../config'
 import { makeCancelable } from '../../utils/promises'
@@ -86,6 +86,12 @@ export default class PostTag extends Component {
   render () {
     if (this.state.postTagData === null) {
       return null
+    }
+
+    if (isPeonyError(this.state.postTagData)) {
+      if (this.state.postTagData.code === 404) {
+        return <Redirect to='/404' />
+      }
     }
 
     if (this.state.isFetching === true) {

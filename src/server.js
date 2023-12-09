@@ -73,7 +73,8 @@ async function generateSitemap (req, res) {
   try {
     const stream = createWriteStream('dist/static/sitemap.xml')
     stream.write(`<?xml version="1.0" encoding="UTF-8"?>
-      <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`)
+      <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    `)
 
     // handle special pages
     // special pages are routes that do not use API-provided data. These possess a initialData property.
@@ -83,7 +84,8 @@ async function generateSitemap (req, res) {
         stream.write(`
           <url>
             <loc>${config.BASE_URL}${route.path}</loc>
-          </url>`)
+          </url>
+        `)
       }
     }
 
@@ -92,10 +94,11 @@ async function generateSitemap (req, res) {
     const pagesData = await pagesResponse.json()
     for (const page of pagesData) {
       stream.write(`
-      <url>
-        <loc>${config.BASE_URL}/page/${page.handle}</loc>
-        <lastmod>${page.updatedAt}</lastmod>
-      </url>`)
+        <url>
+          <loc>${config.BASE_URL}/page/${page.handle}</loc>
+          <lastmod>${page.updatedAt}</lastmod>
+        </url>
+      `)
     }
 
     // handle posts
@@ -103,10 +106,11 @@ async function generateSitemap (req, res) {
     const postsData = await postsResponse.json()
     for (const post of postsData) {
       stream.write(`
-      <url>
-        <loc>${config.BASE_URL}/post/${post.handle}</loc>
-        <lastmod>${post.updatedAt}</lastmod>
-      </url>`)
+        <url>
+          <loc>${config.BASE_URL}/post/${post.handle}</loc>
+          <lastmod>${post.updatedAt}</lastmod>
+        </url>
+      `)
     }
 
     // handle postTags
@@ -114,10 +118,11 @@ async function generateSitemap (req, res) {
     const postTagsData = await postTagsResponse.json()
     for (const postTag of postTagsData) {
       stream.write(`
-      <url>
-        <loc>${config.BASE_URL}/post_tag/${postTag.handle}</loc>
-        <lastmod>${postTag.updatedAt}</lastmod>
-      </url>`)
+        <url>
+          <loc>${config.BASE_URL}/post_tag/${postTag.handle}</loc>
+          <lastmod>${postTag.updatedAt}</lastmod>
+        </url>
+      `)
     }
 
     stream.write('</urlset>')
@@ -142,10 +147,7 @@ async function infernoServerResponse (req, res) {
     // This is used by routes that need API data.
     if (currentRoute.getInitialData) {
       const response = await currentRoute.getInitialData(req.url)
-      if (!response.ok) {
-        const err = await response.text()
-        throw new Error(err)
-      }
+      // if !response.ok an error will be thrown on response.json() and caught by the catch block.
       initialData = await response.json()
       windowInitialData = `<script>window.___initialData = ${JSON.stringify(initialData)};</script>`
     }
@@ -242,48 +244,47 @@ async function infernoServerResponse (req, res) {
       // <meta name="twitter:creator" content="${twitterCreator}"> TODO author if in user.metadata.twitterCreator
     }
 
-    return res.send(`
-    <!DOCTYPE html>
-    <html lang="en">
+    return res.send(`<!DOCTYPE html>
+      <html lang="en">
 
-    <head>
-      ${metaRobots}
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <head>
+        ${metaRobots}
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-      <title>${title}</title>
-      <meta name="description" content="${metaDescription}" />
-      <meta http-equiv="content-language" content="${metaLanguage}" />
-      <meta name="date" content="${metaDate}" />
-      <link rel="canonical" href="${relCanonical}" />
-      ${metaAuthor}
+        <title>${title}</title>
+        <meta name="description" content="${metaDescription}" />
+        <meta http-equiv="content-language" content="${metaLanguage}" />
+        <meta name="date" content="${metaDate}" />
+        <link rel="canonical" href="${relCanonical}" />
+        ${metaAuthor}
 
-      <meta property="og:site_name" content="${ogSiteName}" />
-      <meta property="og:title" content="${ogTitle}" />
-      <meta property="og:description" content="${ogDescription}" />
-      <meta property="og:url" content="${relCanonical}" />
-      <meta property="og:locale" content="${metaLanguage}" />
-      ${ogRest}
+        <meta property="og:site_name" content="${ogSiteName}" />
+        <meta property="og:title" content="${ogTitle}" />
+        <meta property="og:description" content="${ogDescription}" />
+        <meta property="og:url" content="${relCanonical}" />
+        <meta property="og:locale" content="${metaLanguage}" />
+        ${ogRest}
 
-      <meta name="twitter:card" content="summary">
-      <!-- <meta name="twitter:site" content="${twitterSite}"> no twitter handle for website yet -->
-      <meta name="twitter:title" content="${twitterTitle}">
-      <meta name="twitter:description" content="${twitterDescription}">
-      <meta name="twitter:url" content="${relCanonical}">
-      ${twitterRest}
+        <meta name="twitter:card" content="summary">
+        <!-- <meta name="twitter:site" content="${twitterSite}"> no twitter handle for website yet -->
+        <meta name="twitter:title" content="${twitterTitle}">
+        <meta name="twitter:description" content="${twitterDescription}">
+        <meta name="twitter:url" content="${relCanonical}">
+        ${twitterRest}
 
-      <link rel="stylesheet" type="text/css" href="static/bundle.css" />
-      <script src="/static/browser.js" defer></script>
-      ${windowInitialData}
-    </head>
+        <link rel="stylesheet" type="text/css" href="/static/bundle.css" />
+        <script src="/static/browser.js" defer></script>
+        ${windowInitialData}
+      </head>
 
-    <body>
-      <noscript>You need to enable JavaScript to run this app.</noscript>
-      <div id="root">${renderedApp}</div>
-    </body>
+      <body>
+        <noscript>You need to enable JavaScript to run this app.</noscript>
+        <div id="root">${renderedApp}</div>
+      </body>
 
-    </html>
-  `)
+      </html>
+    `)
   } catch (err) {
     // TODO handle errors
     console.error(err)
