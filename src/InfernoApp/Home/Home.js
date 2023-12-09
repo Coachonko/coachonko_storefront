@@ -10,14 +10,15 @@ export default class Home extends Component {
   static initialData = {
     metadata: {
       title: "Coachonko's blog",
-      description: 'Exercise physiologist and web developer',
+      description: 'Exercise physiologist and web developer'
       // ogTitle: '',
       // ogDescription: '',
       // twitterTitle: '',
       // twitterDescription: '',
-      sidebarTags: ['training']
     }
   }
+
+  static sidebarTags = ['training', 'nutrition']
 
   constructor (props) {
     super(props)
@@ -39,7 +40,7 @@ export default class Home extends Component {
         this.gettingPostTags = makeCancelable(this.getPostTags())
         await this.resolveGettingPostTags()
       }
-      const tagsToFetch = [...Home.initialData.metadata.sidebarTags, 'featured']
+      const tagsToFetch = [...Home.sidebarTags, 'featured']
       for (let i = 0; i < tagsToFetch.length; i++) {
         const tagId = this.getPostTagId(tagsToFetch[i]) // TODO if tagId not exists, set error
         this.gettingPostsByTag = makeCancelable(getPostsByTag(tagId, 'limit=3'))
@@ -51,7 +52,7 @@ export default class Home extends Component {
         this.gettingPostTags = makeCancelable(this.getPostTags())
         await this.resolveGettingPostTags()
       }
-      const tagsNeeded = [...Home.initialData.metadata.sidebarTags, 'featured']
+      const tagsNeeded = [...Home.sidebarTags, 'featured']
       const tagsToFetch = []
       for (let i = 0; i < tagsNeeded.length; i++) {
         if (!this.props.postsByTag[tagsNeeded[i]]) {
@@ -252,22 +253,17 @@ function Post ({ key, post }) {
 }
 
 // Accepts an object, expects that all of its properties are arrays of posts.
-// If the object contains one tag, that tag will be rendered.
-// If the object contains more than one tag, the tag names in config.HOME_TAGS will be rendered.
 function Sidebar ({ postTags, postsByTag }) {
   if (postsByTag === null) {
     return null
   }
 
-  let tagsToRender = Object.keys(postsByTag)
-  if (tagsToRender.length > 1) {
-    tagsToRender = config.HOME_TAGS
-  }
+  const tagsToRender = Object.keys(postsByTag)
 
   const tagGroups = []
   for (const tagName of tagsToRender) {
     if (postsByTag[tagName]) {
-      const GroupPosts = []
+      const postGroup = []
       // Only display the latest 3 posts from each tag, or however many are available.
       let maxPosts = 3
       if (postsByTag[tagName].length < 3) {
@@ -275,7 +271,7 @@ function Sidebar ({ postTags, postsByTag }) {
       }
       for (let i = 0; i < maxPosts; i++) {
         const post = postsByTag[tagName][i]
-        GroupPosts.push(
+        postGroup.push(
           <div>
             <Link to={`${config.BASE_URL}/post/${post.handle}`}>
               <h4>{post.title}</h4>
@@ -297,7 +293,7 @@ function Sidebar ({ postTags, postsByTag }) {
           <Link to={`${config.BASE_URL}/post_tag/${currentTag.handle}`}>
             <h3>{tagName}</h3>
           </Link>
-          {GroupPosts}
+          {postGroup}
         </div>
       )
     }
