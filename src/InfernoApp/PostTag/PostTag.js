@@ -1,9 +1,9 @@
 import { Component } from 'inferno'
-import { Link, Redirect } from 'inferno-router'
+import { Redirect } from 'inferno-router'
 
 import { config } from '../../../config'
 import { makeCancelable } from '../../utils/promises'
-import { isPeonyError, getPostsByTag } from '../../utils/peony'
+import { getPostsByTag } from '../../utils/peony'
 import { resolveGettingPostsByTag } from '../../utils/data'
 
 export default class PostTag extends Component {
@@ -35,52 +35,30 @@ export default class PostTag extends Component {
     if (this.state.postTagData === null) {
       // Get postTagData from InfernoApp if available
       if (this.props.postTags) {
-        let matchedPostTag
-        for (const postTag of this.props.postTags) {
-          if (postTag.handle === this.props.match.params.handle) {
-            matchedPostTag = postTag
-            break
-          }
-        }
-        this.setState({ postTagData: matchedPostTag })
+        await this.matchPostTag()
       } else {
         // Get postTagData from peony
-        this.gettingPostTagData = makeCancelable(PostTag.getInitialData(this.props.match.params.handle))
-        await this.resolveGettingPostTagData()
+        // Happens when first request is /post and user clicks on Link to /post_tag.
+        await this.props.fetchPostTags()
+        await this.matchPostTag()
       }
     }
   }
 
-  async componentDidUpdate (lastProps, lastState) {
-    if (lastState.postTagData === null && this.state.postTagData) {
+  async matchPostTag () {
+    let matchedPostTag
+    for (const postTag of this.props.postTags) {
+      if (postTag.handle === this.props.match.params.handle) {
+        matchedPostTag = postTag
+        break
+      }
+    }
+    this.setState({ postTagData: matchedPostTag }, async () => {
       if (!this.props.postsByTag[this.state.postTagData.handle]) {
         this.gettingPostsByTag = makeCancelable(getPostsByTag(this.state.postTagData.id, 'limit=10'))
         await resolveGettingPostsByTag(this, this.state.postTagData.handle)
       }
-    }
-  }
-
-  componentWillUnmount () {
-    if (this.gettingPostTagData) {
-      this.gettingPostTagData.cancel()
-    }
-  }
-
-  async resolveGettingPostTagData () {
-    try {
-      this.setState({ isFetching: true })
-      const response = await this.gettingPostTagData.promise
-      const data = await response.json()
-      if (isPeonyError(data)) {
-        this.props.setPeonyError(data)
-      } else {
-        this.setState({ postTagData: data })
-      }
-    } catch (error) {
-      this.props.setLastError(error)
-    } finally {
-      this.setState({ isFetching: false })
-    }
+    })
   }
 
   render () {

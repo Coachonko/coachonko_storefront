@@ -37,8 +37,7 @@ export default class Home extends Component {
     if (this.props.postsByTag === null) {
       // Get all needed posts
       if (this.props.postTags === null) {
-        this.gettingPostTags = makeCancelable(this.getPostTags())
-        await this.resolveGettingPostTags()
+        await this.props.fetchPostTags()
       }
       const tagsToFetch = [...Home.sidebarTags, 'featured']
       for (let i = 0; i < tagsToFetch.length; i++) {
@@ -49,8 +48,7 @@ export default class Home extends Component {
     } else {
       // Get only missing posts
       if (this.props.postTags === null) {
-        this.gettingPostTags = makeCancelable(this.getPostTags())
-        await this.resolveGettingPostTags()
+        await this.props.fetchPostTags()
       }
       const tagsNeeded = [...Home.sidebarTags, 'featured']
       const tagsToFetch = []
@@ -73,9 +71,6 @@ export default class Home extends Component {
     }
     if (this.gettingNextPosts) {
       this.gettingNextPosts.cancel()
-    }
-    if (this.gettingPostTags) {
-      this.gettingPostTags.cancel()
     }
     if (this.gettingPostsByTag) {
       this.gettingPostsByTag.cancel()
@@ -132,30 +127,6 @@ export default class Home extends Component {
     }
   }
 
-  async getPostTags () {
-    const response = await fetch(`${config.PEONY_STOREFRONT_API}/post_tags`, {
-      method: 'GET'
-    })
-    const data = await response.json()
-    return data
-  }
-
-  async resolveGettingPostTags () {
-    try {
-      this.setState({ isFetching: true })
-      const data = await this.gettingPostTags.promise
-      if (isPeonyError(data)) {
-        this.props.setPeonyError(data)
-      } else {
-        this.props.setPostTags(data)
-      }
-    } catch (error) {
-      this.props.setLastError(error)
-    } finally {
-      this.setState({ isFetching: false })
-    }
-  }
-
   getPostTagId (handle) {
     for (let i = 0; i < this.props.postTags.length; i++) {
       if (this.props.postTags[i].handle === handle) {
@@ -165,9 +136,9 @@ export default class Home extends Component {
   }
 
   render () {
-    let postsByFeatured = null
+    let featuredPosts = null
     if (this.props.postsByTag && this.props.postsByTag.featured) {
-      postsByFeatured = { featured: this.props.postsByTag.featured }
+      featuredPosts = { featured: this.props.postsByTag.featured }
     }
     let otherPostsByTags = null
     if (this.props.postsByTag && Object.keys(this.props.postsByTag).length > 0) {
@@ -186,7 +157,7 @@ export default class Home extends Component {
         <Header />
 
         <div className='posts'>
-          <Sidebar postTags={this.props.postTags} postsByTag={postsByFeatured} />
+          <Sidebar postTags={this.props.postTags} postsByTag={featuredPosts} />
           <Posts postsData={this.props.latestPosts} />
           <Sidebar postTags={this.props.postTags} postsByTag={otherPostsByTags} />
         </div>
@@ -258,12 +229,14 @@ function Sidebar ({ postTags, postsByTag }) {
     return null
   }
 
-  const tagsToRender = Object.keys(postsByTag)
-
   const tagGroups = []
-  for (const tagName of tagsToRender) {
+  for (const tagName of Object.keys(postsByTag)) {
     if (postsByTag[tagName]) {
       const postGroup = []
+      // Immediately process next tag if no posts are available for the current tag.
+      if (postsByTag[tagName].length === 0) {
+        continue
+      }
       // Only display the latest 3 posts from each tag, or however many are available.
       let maxPosts = 3
       if (postsByTag[tagName].length < 3) {

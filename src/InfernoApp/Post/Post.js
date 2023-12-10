@@ -3,7 +3,8 @@ import { Link, Redirect } from 'inferno-router'
 
 import { config } from '../../../config'
 import { makeCancelable } from '../../utils/promises'
-import { isPeonyError } from '../../utils/peony'
+import { getPostsByTag, isPeonyError } from '../../utils/peony'
+import { resolveGettingPostsByTag } from '../../utils/data'
 
 export default class Post extends Component {
   static async getInitialData (url) {
@@ -32,8 +33,8 @@ export default class Post extends Component {
 
   async componentDidMount () {
     if (this.state.postData === null) {
-      // Get postData from InfernoApp if available
       if (this.props.latestPosts) {
+        // Get postData from InfernoApp
         let matchedPost
         for (const post of this.props.latestPosts) {
           if (post.handle === this.props.match.params.handle) {
@@ -41,11 +42,13 @@ export default class Post extends Component {
             break
           }
         }
-        this.setState({ postData: matchedPost })
+        this.setState({ postData: matchedPost }, this.getRelatedPosts)
       } else {
         // Get postData from peony
+        // Happens when first request is to /post, user navigates to /post_tag and then back.
         this.gettingPostData = makeCancelable(Post.getInitialData(this.props.match.params.handle))
         await this.resolveGettingPostData()
+        await this.getRelatedPosts()
       }
     }
   }
@@ -74,6 +77,31 @@ export default class Post extends Component {
     }
   }
 
+  // getRelatedPosts gets 5 posts for each tag in this.state.postData. Used in BottomRow.
+  async getRelatedPosts () {
+    if (this.state.postData.tags && this.state.postData.tags.length > 0) {
+      if (this.props.postsByTag) {
+        for (const tag of this.state.postData.tags) {
+          if (!this.props.postsByTag[tag.handle]) {
+            this.gettingPostsByTag = makeCancelable(getPostsByTag(tag.id, 'limit=5'))
+            await resolveGettingPostsByTag(this, tag.handle)
+          }
+          if (this.props.postsByTag[tag.handle].length < 5) {
+            const offset = this.props.postsByTag[tag.handle].length
+            const limit = 5 - offset
+            this.gettingPostsByTag = makeCancelable(getPostsByTag(tag.id, `limit=${limit}&offset=${offset}`))
+            await resolveGettingPostsByTag(this, tag.handle)
+          }
+        }
+      } else {
+        for (const tag of this.state.postData.tags) {
+          this.gettingPostsByTag = makeCancelable(getPostsByTag(tag.id, 'limit=5'))
+          await resolveGettingPostsByTag(this, tag.handle)
+        }
+      }
+    }
+  }
+
   render () {
     if (this.state.postData === null) {
       return null
@@ -97,17 +125,21 @@ export default class Post extends Component {
     if (this.state.postData.tags) {
       primaryTag = this.state.postData.tags[0]
     }
+
+    // TODO build an array of 4 related posts, use this.state.postData.tags and this.props.postsByTag
+    // Do not include this post in the array.
+    let bottomRowPosts
+
     return (
       <>
         <LeftColumn
           title={this.state.postData.title}
           primaryTag={primaryTag}
+          publishedAt={this.state.postData.publishedAt}
+          updatedAt={this.state.postData.updatedAt}
         />
         <RightColumn post={this.state.postData} />
-        <BottomRow
-          postsByTag={this.props.postsByTag}
-          primaryTag={primaryTag}
-        />
+        <BottomRow relatedPosts={bottomRowPosts} />
       </>
     )
   }
@@ -136,7 +168,8 @@ function RightColumn ({ post }) {
   )
 }
 
-function BottomRow () {
+// Display 4 post previews in a row. Expects an array of 4 Post.
+function BottomRow ({ relatedPosts }) {
   return (
     <div>
       <h4>Further reading</h4>
