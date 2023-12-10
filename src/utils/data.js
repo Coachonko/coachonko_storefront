@@ -7,8 +7,20 @@ export async function resolveGettingPostsByTag (instance, handle) {
     if (isPeonyError(data)) {
       instance.props.setPeonyError(data)
     } else {
-      const newPostsByTag = { ...instance.props.postsByTag, [handle]: data }
-      instance.props.setPostsByTag(newPostsByTag)
+      const prevData = instance.props.postsByTag
+      if (prevData === null) {
+        // If prevData was initialized null by InfernoApp
+        instance.props.setPostsByTag({ [handle]: data })
+      } else {
+        if (prevData[handle]) {
+          // If key exists, merge existing data with new data
+          const mergedData = [...prevData[handle], ...data]
+          instance.props.setPostsByTag({ ...prevData, [handle]: mergedData })
+        } else {
+          // If key doesn't exist, create a new entry
+          instance.props.setPostsByTag({ ...prevData, [handle]: data })
+        }
+      }
     }
   } catch (error) {
     instance.props.setLastError(error)
