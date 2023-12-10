@@ -3,13 +3,13 @@ import { Link, Redirect } from 'inferno-router'
 
 import { config } from '../../../config'
 import { makeCancelable } from '../../utils/promises'
-import { getPostsByTag, isPeonyError } from '../../utils/peony'
-import { resolveGettingPostsByTag } from '../../utils/data'
+import { isPeonyError } from '../../utils/peony'
+import { getPostsByTag, resolveGettingPostsByTag } from '../../utils/data'
 
 export default class Post extends Component {
   static async getInitialData (url) {
     const handle = url.split('/').pop()
-    return fetch(`${config.PEONY_STOREFRONT_API}/posts/handle/${handle}`)
+    return fetch(`${config.PEONY_STOREFRONT_API}/posts?filter_handle=${handle}`)
   }
 
   constructor (props) {
@@ -20,7 +20,8 @@ export default class Post extends Component {
       initialData = this.props.staticContext.initialData
     } else {
       if (window.___initialData) {
-        initialData = window.___initialData
+        // TODO check if server sends a peonyError
+        initialData = window.___initialData[0]
         delete window.___initialData
       }
     }
@@ -48,7 +49,6 @@ export default class Post extends Component {
         // Happens when first request is to /post, user navigates to /post_tag and then back.
         this.gettingPostData = makeCancelable(Post.getInitialData(this.props.match.params.handle))
         await this.resolveGettingPostData()
-        await this.getRelatedPosts()
       }
     }
   }
@@ -68,7 +68,7 @@ export default class Post extends Component {
         this.props.setPeonyError(data)
         this.setState({ postData: data })
       } else {
-        this.setState({ postData: data })
+        this.setState({ postData: data }, this.getRelatedPosts)
       }
     } catch (err) {
       this.props.setLastError(err)
@@ -77,7 +77,9 @@ export default class Post extends Component {
     }
   }
 
-  // getRelatedPosts gets 5 posts for each tag in this.state.postData. Used in BottomRow.
+  // getRelatedPosts gets 5 posts for each tag in this.state.postData.
+  // if this.props.postsByTag already contains some posts, it will get some more.
+  // if this.props.postsByTag already contains all the needed posts, nothing will be done.
   async getRelatedPosts () {
     if (this.state.postData.tags && this.state.postData.tags.length > 0) {
       if (this.props.postsByTag) {

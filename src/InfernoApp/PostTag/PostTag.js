@@ -3,8 +3,7 @@ import { Redirect } from 'inferno-router'
 
 import { config } from '../../../config'
 import { makeCancelable } from '../../utils/promises'
-import { getPostsByTag } from '../../utils/peony'
-import { resolveGettingPostsByTag } from '../../utils/data'
+import { getPostsByTag, resolveGettingPostsByTag } from '../../utils/data'
 
 export default class PostTag extends Component {
   static async getInitialData (url) {
@@ -20,7 +19,8 @@ export default class PostTag extends Component {
       initialData = this.props.staticContext.initialData
     } else {
       if (window.___initialData) {
-        initialData = window.___initialData
+        // TODO check if server sends a peonyError
+        initialData = window.___initialData[0]
         delete window.___initialData
       }
     }
@@ -35,31 +35,47 @@ export default class PostTag extends Component {
     if (this.state.postTagData === null) {
       // Get postTagData from InfernoApp if available
       if (this.props.postTags) {
-        await this.matchPostTag()
+        const matchedPostTag = await this.matchPostTag()
+        this.setState({ postTagData: matchedPostTag }, this.getNeededPosts)
       } else {
         // Get postTagData from peony
         // Happens when first request is /post and user clicks on Link to /post_tag.
         await this.props.fetchPostTags()
-        await this.matchPostTag()
+        const matchedPostTag = await this.matchPostTag()
+        this.setState({ postTagData: matchedPostTag }, this.getNeededPosts)
       }
     }
   }
 
   async matchPostTag () {
-    let matchedPostTag
     for (const postTag of this.props.postTags) {
       if (postTag.handle === this.props.match.params.handle) {
-        matchedPostTag = postTag
-        break
+        return postTag
       }
     }
-    this.setState({ postTagData: matchedPostTag }, async () => {
-      if (!this.props.postsByTag[this.state.postTagData.handle]) {
-        this.gettingPostsByTag = makeCancelable(getPostsByTag(this.state.postTagData.id, 'limit=10'))
-        await resolveGettingPostsByTag(this, this.state.postTagData.handle)
-      }
-    })
   }
+
+  // getNeededPosts gets 10 Post for the needed PostTag.
+  // If this.props.postsByTag contains some posts already, the missing ones are fetched.
+  async getNeededPosts () {
+    const postsByTag = this.props.postsByTag
+    const postTagData = this.state.postTagData
+    if (postsByTag === null || !postsByTag[postTagData.handle]) {
+      this.gettingPostsByTag = makeCancelable(getPostsByTag(postTagData.id, 'limit=10'))
+      await resolveGettingPostsByTag(this, postTagData.handle)
+    }
+    if (
+      postsByTag &&
+      postsByTag[postTagData.handle] &&
+      postsByTag[postTagData.handle].length > 0 &&
+      postsByTag[postTagData.handle].length < 10) {
+      const offset = postsByTag[postTagData.handle].length
+      const limit = 10 - offset
+      this.gettingPostsByTag = makeCancelable(getPostsByTag(postTagData.id, `limit=${limit}&offset${offset}`))
+    }
+  }
+
+  // TODO get more posts
 
   render () {
     if (this.state.postTagData === null) {

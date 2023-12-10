@@ -2,8 +2,8 @@ import { Component } from 'inferno'
 import { Link } from 'inferno-router'
 
 import { config } from '../../../config'
-import { isPeonyError, getPostsByTag } from '../../utils/peony'
-import { resolveGettingPostsByTag } from '../../utils/data'
+import { isPeonyError } from '../../utils/peony'
+import { getPostsByTag, resolveGettingPostsByTag } from '../../utils/data'
 import { makeCancelable } from '../../utils/promises'
 
 export default class Home extends Component {

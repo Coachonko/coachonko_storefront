@@ -1,4 +1,15 @@
+import { config } from '../../config'
 import { isPeonyError } from './peony'
+
+// TODO just pass it the tag and handle everything in one function?
+// TODO move to InfernoApp instead?
+export async function getPostsByTag (id, params) {
+  const response = await fetch(`${config.PEONY_STOREFRONT_API}/posts?filter_tags=${id}&${params}`, {
+    method: 'GET'
+  })
+  const data = await response.json()
+  return data
+}
 
 export async function resolveGettingPostsByTag (instance, handle) {
   try {
