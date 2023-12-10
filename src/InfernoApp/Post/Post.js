@@ -36,13 +36,7 @@ export default class Post extends Component {
     if (this.state.postData === null) {
       if (this.props.latestPosts) {
         // Get postData from InfernoApp
-        let matchedPost
-        for (const post of this.props.latestPosts) {
-          if (post.handle === this.props.match.params.handle) {
-            matchedPost = post
-            break
-          }
-        }
+        const matchedPost = await this.matchPost()
         this.setState({ postData: matchedPost }, this.getRelatedPosts)
       } else {
         // Get postData from peony
@@ -51,11 +45,24 @@ export default class Post extends Component {
         await this.resolveGettingPostData()
       }
     }
+
+    // Handle SSR: if postData is an array, transform to object
+    if (this.state.postData.length && this.state.postData.length === 1) {
+      this.setState({ postData: this.state.postData[0] }, this.getRelatedPosts)
+    }
   }
 
   componentWillUnmount () {
     if (this.gettingPostData) {
       this.gettingPostData.cancel()
+    }
+  }
+
+  async matchPost () {
+    for (const post of this.props.latestPosts) {
+      if (post.handle === this.props.match.params.handle) {
+        return post
+      }
     }
   }
 
@@ -68,7 +75,12 @@ export default class Post extends Component {
         this.props.setPeonyError(data)
         this.setState({ postData: data })
       } else {
-        this.setState({ postData: data }, this.getRelatedPosts)
+        if (data.length === 0) {
+          this.setState({ postData: data }) // render method will redirect
+        }
+        if (data.length === 1) {
+          this.setState({ postData: data[0] }, this.getRelatedPosts)
+        }
       }
     } catch (err) {
       this.props.setLastError(err)
@@ -105,14 +117,26 @@ export default class Post extends Component {
   }
 
   render () {
-    if (this.state.postData === null) {
+    let postData = this.state.postData
+
+    if (postData === null) {
       return null
     }
 
-    if (isPeonyError(this.state.postData)) {
-      if (this.state.postData.code === 404) {
+    if (isPeonyError(postData)) {
+      if (postData.code === 404) {
         return <Redirect to='/404' />
       }
+    }
+
+    // Handle SSR: if postData is an empty array, redirect to NoMatch
+    if (postData.length && postData.length === 0) {
+      return <Redirect to='/404' />
+    }
+
+    // Handle SSR: if postData is an array with one object, use that object
+    if (postData.length && postData.length === 1) {
+      postData = postData[0]
     }
 
     if (this.state.isFetching === true) {
@@ -124,8 +148,8 @@ export default class Post extends Component {
     }
 
     let primaryTag
-    if (this.state.postData.tags) {
-      primaryTag = this.state.postData.tags[0]
+    if (postData.tags) {
+      primaryTag = postData.tags[0]
     }
 
     // TODO build an array of 4 related posts, use this.state.postData.tags and this.props.postsByTag
@@ -135,12 +159,12 @@ export default class Post extends Component {
     return (
       <>
         <LeftColumn
-          title={this.state.postData.title}
+          title={postData.title}
           primaryTag={primaryTag}
-          publishedAt={this.state.postData.publishedAt}
-          updatedAt={this.state.postData.updatedAt}
+          publishedAt={postData.publishedAt}
+          updatedAt={postData.updatedAt}
         />
-        <RightColumn post={this.state.postData} />
+        <RightColumn post={postData} />
         <BottomRow relatedPosts={bottomRowPosts} />
       </>
     )

@@ -1,6 +1,19 @@
 import { config } from '../../config'
 import { isPeonyError } from './peony'
 
+export function retrieveInitialData (staticContext) {
+  let initialData = null
+  if (typeof window === 'undefined') {
+    initialData = staticContext.initialData
+  } else {
+    if (window.___initialData) {
+      initialData = window.___initialData
+      delete window.___initialData
+    }
+  }
+  return initialData
+}
+
 // TODO just pass it the tag and handle everything in one function?
 // TODO move to InfernoApp instead?
 export async function getPostsByTag (id, params) {

@@ -3,7 +3,8 @@ import { Redirect } from 'inferno-router'
 
 import { config } from '../../../config'
 import { makeCancelable } from '../../utils/promises'
-import { getPostsByTag, resolveGettingPostsByTag } from '../../utils/data'
+import { getPostsByTag, resolveGettingPostsByTag, retrieveInitialData } from '../../utils/data'
+import { isPeonyError } from '../../utils/peony'
 
 export default class PostTag extends Component {
   static async getInitialData (url) {
@@ -14,16 +15,7 @@ export default class PostTag extends Component {
   constructor (props) {
     super(props)
 
-    let initialData = null
-    if (typeof window === 'undefined') {
-      initialData = this.props.staticContext.initialData
-    } else {
-      if (window.___initialData) {
-        // TODO check if server sends a peonyError
-        initialData = window.___initialData[0]
-        delete window.___initialData
-      }
-    }
+    const initialData = retrieveInitialData(this.props.staticContext)
 
     this.state = {
       isFetching: false,
@@ -44,6 +36,11 @@ export default class PostTag extends Component {
         const matchedPostTag = await this.matchPostTag()
         this.setState({ postTagData: matchedPostTag }, this.getNeededPosts)
       }
+    }
+
+    // Handle SSR: if postTagData is an array, transform to object
+    if (this.state.postTagData.length && this.state.postTagData.length === 1) {
+      this.setState({ postTagData: this.state.postTagData[0] }, this.getNeededPosts)
     }
   }
 
@@ -78,12 +75,26 @@ export default class PostTag extends Component {
   // TODO get more posts
 
   render () {
-    if (this.state.postTagData === null) {
+    let postTagData = this.state.postTagData
+
+    if (postTagData === null) {
       return null
     }
 
-    if (this.state.postTagData.length === 0) {
+    if (isPeonyError(postTagData)) {
+      this.props.setPeonyError(postTagData)
+      // TODO handle error differently?
       return <Redirect to='/404' />
+    }
+
+    // Handle SSR: if postTagData is an empty array, redirect to NoMatch
+    if (postTagData.length && postTagData.length === 0) {
+      return <Redirect to='/404' />
+    }
+
+    // Handle SSR: if postTagData is an array with one object, use that object
+    if (postTagData.length && postTagData.length === 1) {
+      postTagData = postTagData[0]
     }
 
     if (this.state.isFetching === true) {
@@ -98,7 +109,7 @@ export default class PostTag extends Component {
     return (
       <>
         <div>
-          {JSON.stringify(this.state.postTagData)}
+          {JSON.stringify(postTagData)}
         </div>
       </>
     )
