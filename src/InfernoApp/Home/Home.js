@@ -34,11 +34,12 @@ export default class Home extends Component {
       await this.resolveGettingLatestPosts()
     }
 
+    if (this.props.postTags === null) {
+      await this.props.fetchPostTags()
+    }
+
     if (this.props.postsByTag === null) {
       // Get all needed posts
-      if (this.props.postTags === null) {
-        await this.props.fetchPostTags()
-      }
       const tagsToFetch = [...Home.sidebarTags, 'featured']
       for (let i = 0; i < tagsToFetch.length; i++) {
         const tagId = this.getPostTagId(tagsToFetch[i]) // TODO if tagId not exists, set error
@@ -47,9 +48,6 @@ export default class Home extends Component {
       }
     } else {
       // Get only missing posts
-      if (this.props.postTags === null) {
-        await this.props.fetchPostTags()
-      }
       const tagsNeeded = [...Home.sidebarTags, 'featured']
       const tagsToFetch = []
       for (let i = 0; i < tagsNeeded.length; i++) {
@@ -176,6 +174,7 @@ function Header () {
   )
 }
 
+// TODO move to shared, use in PostTag
 function Posts ({ postsData }) {
   const posts = []
   if (postsData) {
@@ -225,7 +224,7 @@ function Post ({ key, post }) {
 
 // Accepts an object, expects that all of its properties are arrays of posts.
 function Sidebar ({ postTags, postsByTag }) {
-  if (postsByTag === null) {
+  if (postsByTag === null || postTags === null) {
     return null
   }
 
